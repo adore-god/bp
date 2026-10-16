@@ -7,6 +7,15 @@ a{color:var(--link);text-underline-offset:.15em}a:hover{color:var(--accent)}
 header.site{border-bottom:1px solid var(--line);padding-block:.9rem}
 header.site .wrap{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;align-items:baseline;justify-content:space-between}
 .brand{font:700 1.15rem/1.2 Arial,Helvetica,sans-serif;color:var(--fg);text-decoration:none}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand img {
+  display: block;
+  width:60px;
+}
 nav.top{display:flex;flex-wrap:wrap;gap:.25rem 1.1rem;font:.95rem Arial,Helvetica,sans-serif}
 nav.top a{color:var(--fg)}
 .crumbs{font:.85rem Arial,Helvetica,sans-serif;color:var(--muted);padding-top:1rem}
