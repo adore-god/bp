@@ -39,3 +39,13 @@ th{background:var(--card)}
 footer.site{border-top:1px solid var(--line);padding-block:1.5rem;font:.9rem Arial,Helvetica,sans-serif;color:var(--muted)}
 footer.site a{color:var(--muted)}
 small{color:var(--muted)}
+
+
+@keyframes header-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+header.site {
+  animation: header-fade-in 1.5s ease both;
+}
