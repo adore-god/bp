@@ -2434,6 +2434,24 @@ body.is-night .robin-wrap{
   }
 }
 
+/* ---------- Bonsai (replaces the sea cross on Buddha days) ---------- */
+.sea-cross-wrap .bonsai-svg { display: none; }
+body.has-buddha .sea-cross-wrap .bonsai-svg { display: block; }
+body.has-buddha .sea-cross-wrap .cross-svg { display: none; }
+
+.bonsai-trunk { fill: none; stroke: #5a3d28; stroke-linecap: round; stroke-linejoin: round; transition: stroke 4s ease; }
+.bonsai-pot { fill: #7a4a35; transition: fill 4s ease; }
+.bonsai-pot-rim { fill: #8c5a42; transition: fill 4s ease; }
+.bonsai-soil { fill: #2e2118; }
+.bonsai-foliage { fill: #3a6a36; transition: fill 4s ease; }
+.bonsai-foliage-hl { fill: #5a9a4e; opacity: 0.55; transition: fill 4s ease; }
+
+body.is-night .bonsai-trunk { stroke: #24160d; }
+body.is-night .bonsai-pot { fill: #2c1a12; }
+body.is-night .bonsai-pot-rim { fill: #36211a; }
+body.is-night .bonsai-foliage { fill: #0f1d0e; }
+body.is-night .bonsai-foliage-hl { fill: #1a2f16; }
+
 /* ---------- Prayer Bell (periodic timer chime) ---------- */
 .bell-toggle {
   border: 0;
@@ -3758,7 +3776,30 @@ stroke-width="2"/>
           
   <!-- Ornamental Standing Sea Cross -->
 <div class="sea-cross-wrap" aria-hidden="true">
-  <svg viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bonsai: stands in the cross's place on days the Buddha is shown -->
+  <svg class="bonsai-svg" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
+    <!-- Tray and pot -->
+    <rect x="30" y="134" width="40" height="4" rx="1" class="bonsai-pot" />
+    <path d="M 33,122 L 67,122 L 64,134 L 36,134 Z" class="bonsai-pot" />
+    <rect x="30" y="118" width="40" height="6" rx="1.5" class="bonsai-pot-rim" />
+    <!-- Soil -->
+    <ellipse cx="50" cy="118.5" rx="19" ry="2" class="bonsai-soil" />
+    <!-- Trunk and branches -->
+    <path d="M 50,119 C 44,107 57,98 49,88 C 43,80 36,76 40,66 C 41,58 51,54 48,45" class="bonsai-trunk" stroke-width="6.5" />
+    <path d="M 49,89 C 57,86 62,82 68,78" class="bonsai-trunk" stroke-width="3" />
+    <path d="M 40,67 C 34,66 31,64 29,61" class="bonsai-trunk" stroke-width="2.6" />
+    <path d="M 48,48 C 52,44 56,42 60,40" class="bonsai-trunk" stroke-width="2.2" />
+    <!-- Foliage pads -->
+    <ellipse cx="68" cy="76" rx="18" ry="7.5" class="bonsai-foliage" />
+    <ellipse cx="29" cy="59" rx="17" ry="7" class="bonsai-foliage" />
+    <ellipse cx="47" cy="41" rx="21" ry="9.5" class="bonsai-foliage" />
+    <ellipse cx="62" cy="36" rx="12" ry="6" class="bonsai-foliage" />
+    <ellipse cx="65" cy="73.5" rx="11" ry="3.6" class="bonsai-foliage-hl" />
+    <ellipse cx="26" cy="56.6" rx="10" ry="3.4" class="bonsai-foliage-hl" />
+    <ellipse cx="44" cy="37.5" rx="13" ry="4.4" class="bonsai-foliage-hl" />
+    <ellipse cx="60" cy="33.6" rx="7" ry="2.8" class="bonsai-foliage-hl" />
+  </svg>
+  <svg class="cross-svg" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
     <!-- Main Cross Body & Pedestal (Rendered behind water) -->
     <rect x="38" y="122" width="24" height="18" rx="1" class="cross-base-lower" />
     <rect x="42" y="115" width="16" height="10" rx="1" class="cross-base-upper" />
@@ -4750,7 +4791,9 @@ stroke-width="2"/>
       body.setProperty('--angel-glow', rgbaStr([255,235,185], angelGlowAlpha));
     }
 
-    const SUNRISE_START = 300, SUNRISE_FULL = 420, SUNSET_START = 1140, SUNSET_FULL = 1260;
+    // The sun is a faint glow as it clears the horizon (ref 06:00) and fades
+    // out as it touches it again (ref 19:10).
+    const SUNRISE_START = 350, SUNRISE_FULL = 420, SUNSET_START = 1090, SUNSET_FULL = 1170;
     function sunOpacity(m) {
       if (m < SUNRISE_START) return 0;
       if (m < SUNRISE_FULL) return clamp((m - SUNRISE_START) / (SUNRISE_FULL - SUNRISE_START));
@@ -4794,9 +4837,9 @@ stroke-width="2"/>
     function timeOfDayPhase(m) {
       // Mirrors the SUNRISE_/SUNSET_ thresholds above, so this stays in sync
       // with the sun/star fades automatically.
-      if (m >= SUNRISE_START && m < SUNRISE_FULL) return 'dawn';
-      if (m >= SUNRISE_FULL && m < SUNSET_START)  return 'day';
-      if (m >= SUNSET_START && m < SUNSET_FULL)   return 'dusk';
+      if (m >= 300 && m < 420)   return 'dawn';
+      if (m >= 420 && m < 1140)  return 'day';
+      if (m >= 1140 && m < 1260) return 'dusk';
       return 'night';
     }
 
@@ -4850,7 +4893,11 @@ stroke-width="2"/>
     // and night halves of the clock so the reference sunrise/sunset land on
     // the real ones. Change SUN_LAT / SUN_LON to match a different place.
     const SUN_LAT = 51.5074, SUN_LON = -0.1278; // London
-    const REF_SUNRISE = 390, REF_SUNSET = 1140;
+    // Reference day: the sun crosses the horizon at 06:00 and 19:10, the sky
+    // starts to lighten 90 minutes before sunrise and is dark again 80 minutes
+    // after sunset (matching the colour keyframes).
+    const REF_SUNRISE = 360, REF_SUNSET = 1150;
+    const TWI_BEFORE = 90, TWI_AFTER = 80;
 
     function londonDateParts(now) {
       const p = new Intl.DateTimeFormat('en-GB', {
@@ -4889,15 +4936,27 @@ stroke-width="2"/>
     }
 
     // Maps real London minutes-of-day onto the reference day the scene was drawn for.
-    // Daytime [sunrise, sunset] -> [390, 1140]; night [sunset, next sunrise] -> [1140, 1830].
+    //  - the 90 minutes before sunrise and 80 after sunset run 1:1 in real time,
+    //    so dawn and dusk last as long as they really do;
+    //  - daylight is stretched or squeezed to fit between the reference sunrise and sunset;
+    //  - the dark middle of the night takes up whatever is left.
     // Continuous across midnight, so the moon and sky never jump.
     function warpMinutes(real, st) {
       const R = st.rise, S = st.set;
       let m = real;
-      if (m < R) m += 1440;
+      if (m < R - TWI_BEFORE) m += 1440;
       let w;
-      if (m <= S) w = REF_SUNRISE + (m - R) / (S - R) * (REF_SUNSET - REF_SUNRISE);
-      else        w = REF_SUNSET + (m - S) / (R + 1440 - S) * (REF_SUNRISE + 1440 - REF_SUNSET);
+      if (m < R) {
+        w = REF_SUNRISE - (R - m);
+      } else if (m <= S) {
+        w = REF_SUNRISE + (m - R) / (S - R) * (REF_SUNSET - REF_SUNRISE);
+      } else if (m <= S + TWI_AFTER) {
+        w = REF_SUNSET + (m - S);
+      } else {
+        const a = S + TWI_AFTER, b = R - TWI_BEFORE + 1440;
+        const ra = REF_SUNSET + TWI_AFTER, rb = REF_SUNRISE - TWI_BEFORE + 1440;
+        w = ra + (m - a) / (b - a) * (rb - ra);
+      }
       return w >= 1440 ? w - 1440 : w;
     }
 
@@ -4923,7 +4982,7 @@ stroke-width="2"/>
       starsField.style.opacity = starOp;
       horizonEl.style.opacity = glow;
 
-      const sf = fractionFor(minutes, 270, 1290);
+      const sf = fractionFor(minutes, REF_SUNRISE, REF_SUNSET);
       const sPos = arcXY(sf);
       sunEl.style.left = sPos.x + '%';
       sunEl.style.top = sPos.y + '%';
@@ -5064,6 +5123,9 @@ stroke-width="2"/>
         chosen.forEach((fig, i) => {
           fig.style.left = SLOT_LEFT[i];
         });
+        // On days the Buddha is shown, the cross outside the window becomes a bonsai.
+        const buddhaEl = document.querySelector('.buddha-statue');
+        document.body.classList.toggle('has-buddha', !!buddhaEl && shown.has(buddhaEl));
       }
 
       applyRotation();
