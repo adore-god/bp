@@ -2599,7 +2599,7 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
 <div class="menu-pop is-closed" id="menuPop" role="menu">
   <button class="menu-item" role="menuitem" onclick="chooseSound(DAY_TRACK)"><span>Birdsong</span><span class="menu-state" id="birdState"></span></button>
   <button class="menu-item" role="menuitem" onclick="chooseSound(NIGHT_TRACK)"><span>Night sounds</span><span class="menu-state" id="nightState"></span></button>
-  <button class="menu-item" role="menuitem" onclick="chooseSound('rain')"><span>Rain</span><span class="menu-state" id="rainState"></span></button>
+  <button class="menu-item" role="menuitem" onclick="chooseSound(RAIN_TRACK)"><span>Rain</span><span class="menu-state" id="rainState"></span></button>
   <button class="menu-item" role="menuitem" onclick="openFromMenu('bell')"><span>Prayer bell</span></button>
   <button class="menu-item" role="menuitem" onclick="openFromMenu('verse')"><span>Scripture</span></button>
 </div>
@@ -2612,10 +2612,12 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
 
   const DAY_TRACK = 'bird-song.mp3';
   const NIGHT_TRACK = 'night.mp3';
+  const RAIN_TRACK = 'rain.mp3';
 
   // Set the volume for each track
   const DAY_VOLUME = 0.5;
   const NIGHT_VOLUME = 1;
+  const RAIN_VOLUME = 0.8;
 
   let currentTrack = DAY_TRACK;
 
@@ -2623,9 +2625,8 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
   ambienceAudio.volume = DAY_VOLUME;
 
   function toggleAudio() {
-    if (ambienceAudio.paused && !rainOn) {
+    if (ambienceAudio.paused) {
       manualTrack = false;
-      if (rainTarget) { startRain(); return; }
       if (lastPhase) updateAmbienceTrack(lastPhase);
       ambienceAudio.play().catch(error => {
         console.error("Audio playback failed or was blocked by browser:", error);
@@ -2658,7 +2659,7 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
     const on = !ambienceAudio.paused;
     birdState.textContent = (on && currentTrack === DAY_TRACK) ? 'On' : '';
     nightState.textContent = (on && currentTrack === NIGHT_TRACK) ? 'On' : '';
-    rainState.textContent = rainOn ? 'On' : '';
+    rainState.textContent = (on && currentTrack === RAIN_TRACK) ? 'On' : '';
   }
   ['play', 'playing', 'pause'].forEach(ev => ambienceAudio.addEventListener(ev, updateSoundUI));
   ambienceAudio.addEventListener('play', hideSoundHint);
@@ -2667,90 +2668,23 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
   // A manual pick overrides the automatic day/night switch.
   let manualTrack = false;
   let lastPhase = null;
-  // ---- rain: weather state + a synthesised rain sound (no audio file needed) ----
+  // ---- rain: weather state (the rain sound is rain.mp3, a normal track) ----
   let rainTarget = 0, wet = 0;       // rainTarget: raining now (0/1); wet: eased 0..1 for visuals
-  let rainOn = false, rainCtx = null, rainGain = null, rainStopTimer = null;
-
-  function buildRainNodes() {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return false;
-    rainCtx = new AC();
-    const sr = rainCtx.sampleRate, len = sr * 6;
-    const hiss = rainCtx.createBuffer(2, len, sr), body = rainCtx.createBuffer(2, len, sr);
-    for (let c = 0; c < 2; c++) {
-      const h = hiss.getChannelData(c), b = body.getChannelData(c);
-      let last = 0;
-      for (let i = 0; i < len; i++) {
-        const w = Math.random() * 2 - 1;
-        h[i] = w;
-        last = (last + 0.02 * w) / 1.02;
-        b[i] = last * 3.5;
-      }
-    }
-    rainGain = rainCtx.createGain();
-    rainGain.gain.value = 0;
-    rainGain.connect(rainCtx.destination);
-    const layers = [
-      { buf: hiss, type: 'bandpass', freq: 4200, q: 0.35, gain: 0.10 },
-      { buf: hiss, type: 'highpass', freq: 7000, q: 0.7,  gain: 0.04 },
-      { buf: body, type: 'lowpass',  freq: 1100, q: 0.7,  gain: 0.55 }
-    ];
-    layers.forEach(l => {
-      const src = rainCtx.createBufferSource();
-      src.buffer = l.buf; src.loop = true;
-      const f = rainCtx.createBiquadFilter();
-      f.type = l.type; f.frequency.value = l.freq; f.Q.value = l.q;
-      const g = rainCtx.createGain(); g.gain.value = l.gain;
-      src.connect(f); f.connect(g); g.connect(rainGain);
-      src.start();
-    });
-    return true;
+  function trackVolume(t) {
+    return t === NIGHT_TRACK ? NIGHT_VOLUME : (t === RAIN_TRACK ? RAIN_VOLUME : DAY_VOLUME);
   }
-  function startRain() {
-    if (!rainCtx && !buildRainNodes()) return;
-    clearTimeout(rainStopTimer);
-    if (rainCtx.state === 'suspended') rainCtx.resume();
-    ambienceAudio.pause();
-    rainOn = true;
-    const t = rainCtx.currentTime;
-    rainGain.gain.cancelScheduledValues(t);
-    rainGain.gain.setValueAtTime(rainGain.gain.value, t);
-    rainGain.gain.linearRampToValueAtTime(0.9, t + 1.5);
-    hideSoundHint(); updateSoundUI();
-  }
-  function stopRain() {
-    if (!rainOn) return;
-    rainOn = false;
-    const t = rainCtx.currentTime;
-    rainGain.gain.cancelScheduledValues(t);
-    rainGain.gain.setValueAtTime(rainGain.gain.value, t);
-    rainGain.gain.linearRampToValueAtTime(0, t + 1.2);
-    rainStopTimer = setTimeout(() => { if (!rainOn) rainCtx.suspend(); }, 1400);
-    updateSoundUI();
-  }
-  function stopSound() { ambienceAudio.pause(); stopRain(); }
+  function stopSound() { ambienceAudio.pause(); }
 
   // When the weather changes while the automatic sound is playing, follow it.
-  function syncAutoSound() {
-    if (manualTrack) return;
-    if (rainTarget && !ambienceAudio.paused) { startRain(); }
-    else if (!rainTarget && rainOn) {
-      stopRain();
-      if (lastPhase) updateAmbienceTrack(lastPhase);
-      ambienceAudio.play().catch(() => {});
-    }
-  }
+  function syncAutoSound() { if (lastPhase) updateAmbienceTrack(lastPhase); }
 
   function chooseSound(track) {
-    const active = (track === 'rain') ? rainOn : (!ambienceAudio.paused && currentTrack === track);
-    if (active) { stopSound(); return; }
+    if (!ambienceAudio.paused && currentTrack === track) { stopSound(); return; }
     manualTrack = true;
-    if (track === 'rain') { startRain(); return; }
-    stopRain();
     if (currentTrack !== track) {
       currentTrack = track;
       ambienceAudio.src = track;
-      ambienceAudio.volume = (track === NIGHT_TRACK) ? NIGHT_VOLUME : DAY_VOLUME;
+      ambienceAudio.volume = trackVolume(track);
     }
     updateSoundUI();
     ambienceAudio.play().catch(error => console.error("Audio playback failed:", error));
@@ -2759,13 +2693,14 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
     if (!menuPop.contains(e.target) && !menuBtn.contains(e.target)) toggleMenu(false);
   });
   // Gentle one-time nudge so people know sound is available
-  setTimeout(() => { if (ambienceAudio.paused && !rainOn) soundHint.classList.add('is-visible'); }, 1500);
+  setTimeout(() => { if (ambienceAudio.paused) soundHint.classList.add('is-visible'); }, 1500);
   setTimeout(hideSoundHint, 11000);
 
   function updateAmbienceTrack(phase) {
     lastPhase = phase;
     if (manualTrack) return;
-    const wanted = (phase === 'night') ? NIGHT_TRACK : DAY_TRACK;
+    // automatic choice: rain when it is raining, otherwise birds by day and night sounds after dark
+    const wanted = rainTarget ? RAIN_TRACK : ((phase === 'night') ? NIGHT_TRACK : DAY_TRACK);
 
     if (wanted !== currentTrack) {
       currentTrack = wanted;
@@ -2774,7 +2709,7 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
       ambienceAudio.src = wanted;
 
       // Set the correct volume for the current track
-      ambienceAudio.volume = (wanted === NIGHT_TRACK) ? NIGHT_VOLUME : DAY_VOLUME;
+      ambienceAudio.volume = trackVolume(wanted);
 
       if (wasPlaying) {
         ambienceAudio.play().catch(error => {
