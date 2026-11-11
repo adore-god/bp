@@ -4878,7 +4878,7 @@ stroke-width="2"/>
         return { hh, mm, minutes: debugMinutesOverride };
       }
       const parts = new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false
+        timeZone: SANCTUARY_TZ, hour: '2-digit', minute: '2-digit', hour12: false
       }).formatToParts(new Date());
       const hh = parseInt(parts.find(p => p.type === 'hour').value, 10);
       const mm = parseInt(parts.find(p => p.type === 'minute').value, 10);
@@ -4891,30 +4891,89 @@ stroke-width="2"/>
     // they ignored the season. We now compute the real sunrise and sunset for
     // the location and the date (NOAA solar equations), then stretch the day
     // and night halves of the clock so the reference sunrise/sunset land on
-    // the real ones. Change SUN_LAT / SUN_LON to match a different place.
-    const SUN_LAT = 51.5074, SUN_LON = -0.1278; // London
+    // the real ones. Everything follows the visitor's own device time zone;
+    // a rough latitude/longitude for that zone is used for the sun times, and
+    // anywhere unrecognised falls back to London.
+    const SANCTUARY_TZ = (function () {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (tz) { new Intl.DateTimeFormat('en-GB', { timeZone: tz }); return tz; }
+      } catch (e) {}
+      return 'Europe/London';
+    })();
+
+    // Rough city-centre coordinates for common IANA zones: [latitude, longitude].
+    const TZ_COORDS = {
+      'Europe/London':[51.51,-0.13], 'Europe/Dublin':[53.35,-6.26], 'Europe/Lisbon':[38.72,-9.14],
+      'Atlantic/Reykjavik':[64.15,-21.94], 'Europe/Paris':[48.86,2.35], 'Europe/Berlin':[52.52,13.40],
+      'Europe/Madrid':[40.42,-3.70], 'Europe/Rome':[41.90,12.50], 'Europe/Amsterdam':[52.37,4.90],
+      'Europe/Brussels':[50.85,4.35], 'Europe/Zurich':[47.37,8.54], 'Europe/Vienna':[48.21,16.37],
+      'Europe/Stockholm':[59.33,18.07], 'Europe/Oslo':[59.91,10.75], 'Europe/Copenhagen':[55.68,12.57],
+      'Europe/Helsinki':[60.17,24.94], 'Europe/Warsaw':[52.23,21.01], 'Europe/Prague':[50.08,14.44],
+      'Europe/Budapest':[47.50,19.04], 'Europe/Athens':[37.98,23.73], 'Europe/Bucharest':[44.43,26.10],
+      'Europe/Kiev':[50.45,30.52], 'Europe/Kyiv':[50.45,30.52], 'Europe/Istanbul':[41.01,28.98],
+      'Europe/Moscow':[55.75,37.62], 'Africa/Cairo':[30.04,31.24], 'Africa/Johannesburg':[-26.20,28.04],
+      'Africa/Lagos':[6.52,3.38], 'Africa/Nairobi':[-1.29,36.82], 'Africa/Casablanca':[33.57,-7.59],
+      'Africa/Accra':[5.60,-0.19], 'Asia/Jerusalem':[31.77,35.22], 'Asia/Dubai':[25.20,55.27],
+      'Asia/Riyadh':[24.71,46.68], 'Asia/Tehran':[35.69,51.39], 'Asia/Karachi':[24.86,67.01],
+      'Asia/Kolkata':[28.61,77.21], 'Asia/Calcutta':[28.61,77.21], 'Asia/Dhaka':[23.81,90.41],
+      'Asia/Kathmandu':[27.70,85.30], 'Asia/Colombo':[6.93,79.86], 'Asia/Yangon':[16.80,96.15],
+      'Asia/Bangkok':[13.76,100.50], 'Asia/Ho_Chi_Minh':[10.82,106.63], 'Asia/Jakarta':[-6.20,106.85],
+      'Asia/Singapore':[1.35,103.82], 'Asia/Kuala_Lumpur':[3.14,101.69], 'Asia/Manila':[14.60,120.98],
+      'Asia/Hong_Kong':[22.32,114.17], 'Asia/Shanghai':[31.23,121.47], 'Asia/Taipei':[25.03,121.57],
+      'Asia/Seoul':[37.57,126.98], 'Asia/Tokyo':[35.68,139.69], 'Australia/Perth':[-31.95,115.86],
+      'Australia/Adelaide':[-34.93,138.60], 'Australia/Darwin':[-12.46,130.84],
+      'Australia/Brisbane':[-27.47,153.03], 'Australia/Sydney':[-33.87,151.21],
+      'Australia/Melbourne':[-37.81,144.96], 'Pacific/Auckland':[-36.85,174.76],
+      'Pacific/Honolulu':[21.31,-157.86], 'America/Anchorage':[61.22,-149.90],
+      'America/Los_Angeles':[34.05,-118.24], 'America/Vancouver':[49.28,-123.12],
+      'America/Denver':[39.74,-104.99], 'America/Phoenix':[33.45,-112.07], 'America/Chicago':[41.88,-87.63],
+      'America/Mexico_City':[19.43,-99.13], 'America/Toronto':[43.65,-79.38], 'America/New_York':[40.71,-74.01],
+      'America/Halifax':[44.65,-63.57], 'America/Havana':[23.11,-82.37], 'America/Bogota':[4.71,-74.07],
+      'America/Caracas':[10.48,-66.90], 'America/Lima':[-12.05,-77.04], 'America/Santiago':[-33.45,-70.67],
+      'America/Sao_Paulo':[-23.55,-46.63], 'America/Argentina/Buenos_Aires':[-34.60,-58.38],
+      'America/Buenos_Aires':[-34.60,-58.38]
+    };
+    // Fallback for zones not listed: a typical latitude for the region, and a
+    // longitude worked out from the zone's standard UTC offset.
+    const REGION_LAT = { Europe:50, America:38, Asia:30, Africa:5, Australia:-30, Pacific:-15,
+                         Atlantic:40, Indian:-10, Antarctica:-75 };
+
+    function zonedParts(date) {
+      const p = new Intl.DateTimeFormat('en-GB', {
+        timeZone: SANCTUARY_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false
+      }).formatToParts(date);
+      const get = t => parseInt(p.find(x => x.type === t).value, 10);
+      return { y: get('year'), mo: get('month'), d: get('day'), hh: get('hour') % 24, mi: get('minute') };
+    }
+    // The zone's UTC offset at a given moment, in minutes (handles +13, +14, half-hours...).
+    function tzOffsetMinutes(date) {
+      const L = zonedParts(date);
+      const localAsUtcMin = Date.UTC(L.y, L.mo - 1, L.d, L.hh, L.mi) / 60000;
+      return Math.round(localAsUtcMin - Math.floor(date.getTime() / 60000));
+    }
+    const [SUN_LAT, SUN_LON] = (function () {
+      if (TZ_COORDS[SANCTUARY_TZ]) return TZ_COORDS[SANCTUARY_TZ];
+      try {
+        const y = new Date().getUTCFullYear();
+        const std = Math.min(tzOffsetMinutes(new Date(Date.UTC(y, 0, 15))),
+                             tzOffsetMinutes(new Date(Date.UTC(y, 6, 15))));
+        const lat = REGION_LAT[SANCTUARY_TZ.split('/')[0]];
+        if (lat !== undefined) return [lat, std / 4];
+      } catch (e) {}
+      return TZ_COORDS['Europe/London'];
+    })();
     // Reference day: the sun crosses the horizon at 06:00 and 19:10, the sky
     // starts to lighten 90 minutes before sunrise and is dark again 80 minutes
     // after sunset (matching the colour keyframes).
     const REF_SUNRISE = 360, REF_SUNSET = 1150;
     const REF_TWI_BEFORE = 90, REF_TWI_AFTER = 80;
 
-    function londonDateParts(now) {
-      const p = new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', hour12: false
-      }).formatToParts(now);
-      const get = t => parseInt(p.find(x => x.type === t).value, 10);
-      return { y: get('year'), mo: get('month'), d: get('day'), hh: get('hour') % 24, mi: get('minute') };
-    }
-
     function computeSunTimes() {
       const now = new Date();
-      const L = londonDateParts(now);
-      // London's current UTC offset in minutes (0 in winter, 60 in BST)
-      let offset = (L.hh * 60 + L.mi) - (now.getUTCHours() * 60 + now.getUTCMinutes());
-      if (offset > 720) offset -= 1440;
-      if (offset < -720) offset += 1440;
+      const L = zonedParts(now);
+      const offset = tzOffsetMinutes(now); // this zone's current UTC offset, in minutes
 
       const start = Date.UTC(L.y, 0, 0);
       const N = Math.round((Date.UTC(L.y, L.mo - 1, L.d) - start) / 86400000);
@@ -4928,10 +4987,15 @@ stroke-width="2"/>
       const latR = SUN_LAT * rad;
       let cosHA = Math.cos(90.833 * rad) / (Math.cos(latR) * Math.cos(decl)) - Math.tan(latR) * Math.tan(decl);
       cosHA = Math.max(-1, Math.min(1, cosHA));
-      const ha = Math.acos(cosHA) / rad;
+      // keep the day between 2 and 22 hours long, so polar places still get a
+      // sunrise and sunset and the sky never gets stuck
+      const ha = Math.max(15, Math.min(165, Math.acos(cosHA) / rad));
 
-      const rise = 720 - 4 * (SUN_LON + ha) - eqtime + offset;
-      const set  = 720 - 4 * (SUN_LON - ha) - eqtime + offset;
+      const rise0 = 720 - 4 * (SUN_LON + ha) - eqtime + offset;
+      const set0  = 720 - 4 * (SUN_LON - ha) - eqtime + offset;
+      // wrap into the local day (some zones sit far from their zone's meridian)
+      const rise = ((rise0 % 1440) + 1440) % 1440;
+      const set  = rise + (set0 - rise0);
 
       // Twilight: how long the sky glows before sunrise and after sunset, measured
       // as the time the sun takes to climb from 10 degrees below the horizon to the
@@ -5076,7 +5140,7 @@ stroke-width="2"/>
 
     // ---------- figure rotation: only 2 of the 6 sanctuary figures show at once ----------
     // (wooden figure, Mary, Paul, Peter, John, seated Buddha). Which pair appears is picked pseudo-randomly
-    // from the calendar date (Europe/London), so it stays the same all day and
+    // from the calendar date (in the visitor's own time zone), so it stays the same all day and
     // changes to a different pair the next day.
     (function figureRotationScheduler(){
       const figures = [
@@ -5092,7 +5156,7 @@ stroke-width="2"/>
 
       function londonDateString() {
         return new Intl.DateTimeFormat('en-CA', {
-          timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit'
+          timeZone: SANCTUARY_TZ, year: 'numeric', month: '2-digit', day: '2-digit'
         }).format(new Date());
       }
 
