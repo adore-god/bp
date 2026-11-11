@@ -2831,39 +2831,121 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
 <script>
   (function bellTimer() {
     let audioCtx = null;
-    let bellTimeoutId = null;
-    let countdownId = null;
+    let bus = null;            // shared volume -> compressor -> speakers
+    let tickId = null;
     let bellMinutes = 5;
     let bellEnabled = false;
-    let nextBellAt = null;
+    let nextBellAt = null;     // wall-clock ms of the next bell
+    let queued = [];           // bells already handed to the audio clock: {at, when, master, oscs}
+    let keepAliveEl = null;
+
+    const LOOKAHEAD_MS = 60 * 60 * 1000; // pre-schedule up to an hour ahead
+    const MAX_QUEUED = 20;
 
     const toggleBtn = document.getElementById('menuBtn');
     const panelEl = document.getElementById('bellPanel');
     const enableEl = document.getElementById('bellEnable');
     const intervalEl = document.getElementById('bellIntervalInput');
+    const volEl = document.getElementById('bellVolume');
     const statusEl = document.getElementById('bellStatus');
     const countdownEl = document.getElementById('bellCountdown');
+
+    // iOS Safari 16.4+: treat this page as "playback" audio so it keeps sounding
+    // with the screen locked and ignores the silent switch.
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
 
     function ensureAudioContext() {
       if (!audioCtx) {
         const AC = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new AC();
+        audioCtx = new AC({ latencyHint: 'playback' });
+
+        const comp = audioCtx.createDynamicsCompressor();
+        comp.threshold.value = -14;
+        comp.knee.value = 10;
+        comp.ratio.value = 10;
+        comp.attack.value = 0.003;
+        comp.release.value = 0.25;
+        comp.connect(audioCtx.destination);
+
+        bus = audioCtx.createGain();
+        bus.gain.value = 1.4 * currentVolume();
+        bus.connect(comp);
+
+        // When the OS lets go of the audio (call, lock, etc.) and later gives it
+        // back, re-line the queue up with the real clock.
+        audioCtx.addEventListener('statechange', () => {
+          if (audioCtx.state === 'running') resync();
+        });
       }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+      if (audioCtx.state !== 'running') {
+        audioCtx.resume().catch(() => {});
       }
       return audioCtx;
     }
 
-    // Synthesised bowl/bell tone: a few slightly inharmonic partials
-    // over a sine fundamental, each with its own decay - no audio file needed.
-    function ringBell() {
-      const ctx = ensureAudioContext();
-      const now = ctx.currentTime;
-      // Higher fundamental than before (440 Hz): phone speakers barely reproduce
-      // 220 Hz, which is why the old bell sounded so faint. Partial gains are
-      // roughly doubled, and the signal goes through a compressor so it can be
-      // loud and cut through other audio without clipping.
+    function currentVolume() {
+      return volEl ? (parseFloat(volEl.value) || 1) : 1;
+    }
+    if (volEl) {
+      volEl.addEventListener('input', () => {
+        if (bus) bus.gain.value = 1.4 * currentVolume();
+      });
+    }
+
+    // ---- Keep-alive: a looping, inaudible audio element. Browsers (especially
+    // mobile Safari/Chrome) only keep a page's audio running in the background
+    // while a media element is actively playing.
+    function makeSilentWavUrl() {
+      const sr = 8000, n = sr; // 1 second, mono, 16-bit
+      const buf = new ArrayBuffer(44 + n * 2);
+      const v = new DataView(buf);
+      const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+      w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt ');
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true);
+      v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+      w(36, 'data'); v.setUint32(40, n * 2, true);
+      // +/-1 LSB noise: inaudible, but not pure digital silence (which some platforms ignore)
+      for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.random() < 0.5 ? -1 : 1, true);
+      return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+    }
+
+    function startKeepAlive() {
+      if (!keepAliveEl) {
+        keepAliveEl = new Audio(makeSilentWavUrl());
+        keepAliveEl.loop = true;
+        keepAliveEl.setAttribute('playsinline', '');
+      }
+      keepAliveEl.play().catch(() => {});
+    }
+    function stopKeepAlive() {
+      if (keepAliveEl) keepAliveEl.pause();
+    }
+
+    // Lock-screen / notification-shade presence, with a way to stop the bell.
+    function setMediaSession(on) {
+      if (!('mediaSession' in navigator)) return;
+      try {
+        if (on) {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: 'Prayer Bell',
+            artist: 'Candle Sanctuary'
+          });
+          navigator.mediaSession.playbackState = 'playing';
+          const stop = () => { enableEl.checked = false; stopBell(); };
+          navigator.mediaSession.setActionHandler('pause', stop);
+          navigator.mediaSession.setActionHandler('stop', stop);
+        } else {
+          navigator.mediaSession.playbackState = 'none';
+          navigator.mediaSession.metadata = null;
+        }
+      } catch (e) {}
+    }
+
+    // ---- The bowl itself. `when` is a time on the audio clock, so a bell can be
+    // queued ahead of time and still sound while timers are throttled.
+    function strike(when) {
+      const ctx = audioCtx;
       const fundamental = 440;
       const partials = [
         { ratio: 1,    gain: 0.55, decay: 5.0 },
@@ -2871,34 +2953,91 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
         { ratio: 3.88, gain: 0.22, decay: 3.0 },
         { ratio: 5.43, gain: 0.12, decay: 2.2 }
       ];
-      const volEl = document.getElementById('bellVolume');
-      const vol = volEl ? parseFloat(volEl.value) || 1 : 1;
-
-      const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -14;
-      comp.knee.value = 10;
-      comp.ratio.value = 10;
-      comp.attack.value = 0.003;
-      comp.release.value = 0.25;
-      comp.connect(ctx.destination);
-
       const master = ctx.createGain();
-      master.gain.value = 1.4 * vol;
-      master.connect(comp);
-
-      partials.forEach(p => {
+      master.connect(bus);
+      const oscs = partials.map(p => {
         const osc = ctx.createOscillator();
         osc.type = 'sine';
         osc.frequency.value = fundamental * p.ratio;
         const g = ctx.createGain();
-        g.gain.setValueAtTime(0.0001, now);
-        g.gain.linearRampToValueAtTime(p.gain, now + 0.008); // sharp strike, no click
-        g.gain.exponentialRampToValueAtTime(0.0001, now + p.decay);
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.linearRampToValueAtTime(p.gain, when + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, when + p.decay);
         osc.connect(g);
         g.connect(master);
-        osc.start(now);
-        osc.stop(now + p.decay + 0.1);
+        osc.start(when);
+        osc.stop(when + p.decay + 0.1);
+        return osc;
       });
+      return { when, master, oscs };
+    }
+
+    function cancelBell(q) {
+      q.oscs.forEach(o => { try { o.stop(0); } catch (e) {} });
+      try { q.master.disconnect(); } catch (e) {}
+    }
+
+    function queueBell(atMs) {
+      const when = audioCtx.currentTime + Math.max(0, (atMs - Date.now()) / 1000);
+      const q = strike(when);
+      q.at = atMs;
+      queued.push(q);
+    }
+
+    function fillQueue() {
+      if (!bellEnabled || !audioCtx || audioCtx.state !== 'running') return;
+      const now = Date.now();
+      const step = bellMinutes * 60000;
+      queued = queued.filter(q => q.at > now - 10000); // forget bells that finished ringing
+      const have = new Set(queued.map(q => q.at));
+      for (let k = 0; k < MAX_QUEUED; k++) {
+        const t = nextBellAt + k * step;
+        if (t > now + LOOKAHEAD_MS) break;
+        if (!have.has(t)) queueBell(t);
+      }
+    }
+
+    function advanceNextBell() {
+      const now = Date.now();
+      const step = bellMinutes * 60000;
+      if (now >= nextBellAt) {
+        nextBellAt += (Math.floor((now - nextBellAt) / step) + 1) * step;
+      }
+    }
+
+    function cancelFutureBells() {
+      const ct = audioCtx ? audioCtx.currentTime : 0;
+      queued = queued.filter(q => {
+        if (q.when > ct) { cancelBell(q); return false; }
+        return true;
+      });
+    }
+
+    // Re-align everything with the wall clock (after the page returns, the OS
+    // hands audio back, etc.). If the audio engine was frozen and a bell was
+    // missed, ring once now so it isn't silently lost.
+    function resync() {
+      if (!bellEnabled || !audioCtx || audioCtx.state !== 'running') return;
+      const nowMs = Date.now();
+      const ct = audioCtx.currentTime;
+      let missed = false;
+      queued = queued.filter(q => {
+        if (q.when > ct) {
+          cancelBell(q);
+          if (q.at <= nowMs) missed = true;
+          return false;
+        }
+        return true;
+      });
+      advanceNextBell();
+      if (missed) strike(ct);
+      fillQueue();
+      updateCountdownDisplay();
+    }
+
+    function ringBell() {
+      ensureAudioContext();
+      strike(audioCtx.currentTime);
     }
 
     function formatCountdown(ms) {
@@ -2916,14 +3055,11 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
       countdownEl.textContent = 'Next bell in ' + formatCountdown(nextBellAt - Date.now());
     }
 
-    function scheduleNextBell() {
-      clearTimeout(bellTimeoutId);
-      const ms = bellMinutes * 60 * 1000;
-      nextBellAt = Date.now() + ms;
-      bellTimeoutId = setTimeout(() => {
-        ringBell();
-        if (bellEnabled) scheduleNextBell();
-      }, ms);
+    function tick() {
+      if (!bellEnabled) return;
+      advanceNextBell();
+      fillQueue();
+      updateCountdownDisplay();
     }
 
     function setStatusText() {
@@ -2933,26 +3069,35 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
     }
 
     function startBell() {
+      ensureAudioContext();
+      startKeepAlive();
+      setMediaSession(true);
       bellEnabled = true;
+      nextBellAt = Date.now() + bellMinutes * 60000;
       setStatusText();
-      scheduleNextBell();
-      if (!countdownId) countdownId = setInterval(updateCountdownDisplay, 1000);
+      fillQueue();
+      if (audioCtx.state !== 'running') {
+        // fillQueue will run from the statechange handler once audio is allowed
+        audioCtx.resume().then(resync).catch(() => {});
+      }
+      if (!tickId) tickId = setInterval(tick, 1000);
+      updateCountdownDisplay();
       toggleBtn.classList.add('is-active');
     }
 
     function stopBell() {
       bellEnabled = false;
-      clearTimeout(bellTimeoutId);
-      bellTimeoutId = null;
+      cancelFutureBells();
       nextBellAt = null;
       setStatusText();
       countdownEl.textContent = '';
-      if (countdownId) { clearInterval(countdownId); countdownId = null; }
+      if (tickId) { clearInterval(tickId); tickId = null; }
+      stopKeepAlive();
+      setMediaSession(false);
       toggleBtn.classList.remove('is-active');
     }
 
     enableEl.addEventListener('change', (e) => {
-      ensureAudioContext();
       if (e.target.checked) startBell(); else stopBell();
     });
 
@@ -2963,7 +3108,21 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
       e.target.value = val;
       bellMinutes = val;
       setStatusText();
-      if (bellEnabled) scheduleNextBell(); // restart the countdown at the new length
+      if (bellEnabled) {
+        // restart the countdown at the new length
+        cancelFutureBells();
+        nextBellAt = Date.now() + bellMinutes * 60000;
+        fillQueue();
+        updateCountdownDisplay();
+      }
+    });
+
+    // Coming back to the page: wake the audio engine and re-sync.
+    document.addEventListener('visibilitychange', () => {
+      if (!bellEnabled) return;
+      ensureAudioContext();
+      if (keepAliveEl && keepAliveEl.paused) keepAliveEl.play().catch(() => {});
+      resync();
     });
 
     window.toggleBellPanel = function (forceState) {
@@ -2973,7 +3132,6 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
     };
 
     window.testBellRing = function () {
-      ensureAudioContext();
       ringBell();
     };
   })();
