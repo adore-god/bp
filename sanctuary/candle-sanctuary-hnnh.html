@@ -2487,6 +2487,28 @@ filter:blur(1.5px);
 body.has-buddha .sea-cross-wrap .bonsai-svg { display: block; }
 body.has-buddha .sea-cross-wrap .cross-svg { display: none; }
 
+/* ---------- Tree of Life (replaces the sea cross on Artemis days, unless the Buddha's bonsai has it) ---------- */
+.sea-cross-wrap .tol-svg { display: none; }
+body.has-tol .sea-cross-wrap .tol-svg { display: block; }
+body.has-tol .sea-cross-wrap .cross-svg { display: none; }
+
+.tol-trunk { fill: #5a3d28; transition: fill 4s ease; }
+.tol-branch { fill: none; stroke: #5a3d28; stroke-linecap: round; stroke-linejoin: round; transition: stroke 4s ease; }
+.tol-ground { fill: #4a3a2a; transition: fill 4s ease; }
+.tol-ring { fill: none; stroke: #c4a050; stroke-width: 1.1; opacity: 0.8; transition: stroke 4s ease; }
+.tol-leaf { fill: #3f7a3a; transition: fill 4s ease; }
+.tol-leaf-hl { fill: #6aa85a; opacity: 0.55; transition: fill 4s ease; }
+.tol-fruit { fill: #e0a830; transition: fill 4s ease; }
+.tol-fruit-group { filter: drop-shadow(0 0 1.5px rgba(255, 210, 110, 0.7)); }
+
+body.is-night .tol-trunk { fill: #24160d; }
+body.is-night .tol-branch { stroke: #24160d; }
+body.is-night .tol-ground { fill: #1e1710; }
+body.is-night .tol-ring { stroke: #6a5428; }
+body.is-night .tol-leaf { fill: #0f1d0e; }
+body.is-night .tol-leaf-hl { fill: #1a2f16; }
+body.is-night .tol-fruit { fill: #8a6414; }
+
 .bonsai-trunk { fill: none; stroke: #5a3d28; stroke-linecap: round; stroke-linejoin: round; transition: stroke 4s ease; }
 .bonsai-pot { fill: #7a4a35; transition: fill 4s ease; }
 .bonsai-pot-rim { fill: #8c5a42; transition: fill 4s ease; }
@@ -3938,6 +3960,76 @@ stroke-width="2"/>
     <ellipse cx="26" cy="56.6" rx="10" ry="3.4" class="bonsai-foliage-hl" />
     <ellipse cx="44" cy="37.5" rx="13" ry="4.4" class="bonsai-foliage-hl" />
     <ellipse cx="60" cy="33.6" rx="7" ry="2.8" class="bonsai-foliage-hl" />
+  </svg>
+  <!-- Tree of Life: stands in the cross's place on days Artemis is shown (and the Buddha is not) -->
+  <svg class="tol-svg" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
+    <!-- Ground and roots -->
+    <ellipse cx="50" cy="134" rx="25" ry="4" class="tol-ground" />
+    <path class="tol-branch" d="M 47,124 C 40,126 34,130 28,134" stroke-width="3" />
+    <path class="tol-branch" d="M 53,124 C 60,126 66,130 72,134" stroke-width="3" />
+    <path class="tol-branch" d="M 49,128 C 46,131 42,133 38,135" stroke-width="2" />
+    <path class="tol-branch" d="M 51,128 C 54,131 58,133 62,135" stroke-width="2" />
+    <!-- Ring of life encircling the crown -->
+    <circle class="tol-ring" cx="50" cy="56" r="38" />
+    <!-- Trunk -->
+    <path class="tol-trunk" d="M 43,134 C 46,116 47,100 48,86 L 52,86 C 53,100 54,116 57,134 Z" />
+    <path class="tol-branch" d="M 50,90 L 50,30" stroke-width="3" />
+    <!-- Left half -->
+    <g>
+      <path class="tol-branch" d="M 49,98 C 38,96 24,90 14,76" stroke-width="2.4" />
+      <path class="tol-branch" d="M 49,88 C 38,80 26,70 18,54" stroke-width="2.2" />
+      <path class="tol-branch" d="M 49,78 C 42,66 34,54 28,40" stroke-width="2.0" />
+      <path class="tol-branch" d="M 50,66 C 46,54 42,42 38,28" stroke-width="1.6" />
+      <ellipse class="tol-leaf" cx="15" cy="75" rx="10" ry="7" transform="rotate(-20 15 75)" />
+      <ellipse class="tol-leaf" cx="18" cy="56" rx="10" ry="7.5" transform="rotate(-30 18 56)" />
+      <ellipse class="tol-leaf" cx="28" cy="40" rx="10" ry="7" transform="rotate(-35 28 40)" />
+      <ellipse class="tol-leaf" cx="40" cy="30" rx="9" ry="6.5" transform="rotate(-30 40 30)" />
+      <ellipse class="tol-leaf" cx="35" cy="60" rx="8" ry="5.5" transform="rotate(-15 35 60)" />
+      <ellipse class="tol-leaf" cx="26" cy="72" rx="7" ry="5" transform="rotate(-10 26 72)" />
+      <ellipse class="tol-leaf-hl" cx="14" cy="73.6" rx="5.5" ry="3.1" transform="rotate(-20 15 75)" />
+      <ellipse class="tol-leaf-hl" cx="17" cy="54.6" rx="5.5" ry="3.4" transform="rotate(-30 18 56)" />
+      <ellipse class="tol-leaf-hl" cx="27" cy="38.6" rx="5.5" ry="3.1" transform="rotate(-35 28 40)" />
+      <ellipse class="tol-leaf-hl" cx="39" cy="28.6" rx="5.0" ry="2.9" transform="rotate(-30 40 30)" />
+      <ellipse class="tol-leaf-hl" cx="34" cy="58.6" rx="4.4" ry="2.5" transform="rotate(-15 35 60)" />
+      <ellipse class="tol-leaf-hl" cx="25" cy="70.6" rx="3.9" ry="2.2" transform="rotate(-10 26 72)" />
+    </g>
+    <!-- Right half (mirror) -->
+    <g transform="matrix(-1 0 0 1 100 0)">
+      <path class="tol-branch" d="M 49,98 C 38,96 24,90 14,76" stroke-width="2.4" />
+      <path class="tol-branch" d="M 49,88 C 38,80 26,70 18,54" stroke-width="2.2" />
+      <path class="tol-branch" d="M 49,78 C 42,66 34,54 28,40" stroke-width="2.0" />
+      <path class="tol-branch" d="M 50,66 C 46,54 42,42 38,28" stroke-width="1.6" />
+      <ellipse class="tol-leaf" cx="15" cy="75" rx="10" ry="7" transform="rotate(-20 15 75)" />
+      <ellipse class="tol-leaf" cx="18" cy="56" rx="10" ry="7.5" transform="rotate(-30 18 56)" />
+      <ellipse class="tol-leaf" cx="28" cy="40" rx="10" ry="7" transform="rotate(-35 28 40)" />
+      <ellipse class="tol-leaf" cx="40" cy="30" rx="9" ry="6.5" transform="rotate(-30 40 30)" />
+      <ellipse class="tol-leaf" cx="35" cy="60" rx="8" ry="5.5" transform="rotate(-15 35 60)" />
+      <ellipse class="tol-leaf" cx="26" cy="72" rx="7" ry="5" transform="rotate(-10 26 72)" />
+      <ellipse class="tol-leaf-hl" cx="14" cy="73.6" rx="5.5" ry="3.1" transform="rotate(-20 15 75)" />
+      <ellipse class="tol-leaf-hl" cx="17" cy="54.6" rx="5.5" ry="3.4" transform="rotate(-30 18 56)" />
+      <ellipse class="tol-leaf-hl" cx="27" cy="38.6" rx="5.5" ry="3.1" transform="rotate(-35 28 40)" />
+      <ellipse class="tol-leaf-hl" cx="39" cy="28.6" rx="5.0" ry="2.9" transform="rotate(-30 40 30)" />
+      <ellipse class="tol-leaf-hl" cx="34" cy="58.6" rx="4.4" ry="2.5" transform="rotate(-15 35 60)" />
+      <ellipse class="tol-leaf-hl" cx="25" cy="70.6" rx="3.9" ry="2.2" transform="rotate(-10 26 72)" />
+    </g>
+    <!-- Crown -->
+    <ellipse class="tol-leaf" cx="50" cy="24" rx="11" ry="7.5" />
+    <ellipse class="tol-leaf-hl" cx="48" cy="21.5" rx="6" ry="3" />
+    <!-- Twelve fruits (Revelation 22:2) -->
+    <g class="tol-fruit-group">
+      <circle class="tol-fruit" cx="10" cy="72" r="2.1" />
+      <circle class="tol-fruit" cx="14" cy="54" r="2.1" />
+      <circle class="tol-fruit" cx="24" cy="38" r="2.1" />
+      <circle class="tol-fruit" cx="36" cy="26" r="2.1" />
+      <circle class="tol-fruit" cx="50" cy="16" r="2.1" />
+      <circle class="tol-fruit" cx="64" cy="26" r="2.1" />
+      <circle class="tol-fruit" cx="76" cy="38" r="2.1" />
+      <circle class="tol-fruit" cx="86" cy="54" r="2.1" />
+      <circle class="tol-fruit" cx="90" cy="72" r="2.1" />
+      <circle class="tol-fruit" cx="36" cy="62" r="2.1" />
+      <circle class="tol-fruit" cx="64" cy="62" r="2.1" />
+      <circle class="tol-fruit" cx="50" cy="46" r="2.1" />
+    </g>
   </svg>
   <svg class="cross-svg" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
     <!-- Main Cross Body & Pedestal (Rendered behind water) -->
@@ -5508,6 +5600,9 @@ stroke-width="2"/>
         // On days the Buddha is shown, the cross outside the window becomes a bonsai.
         const buddhaEl = document.querySelector('.buddha-statue');
         document.body.classList.toggle('has-buddha', !!buddhaEl && shown.has(buddhaEl));
+        // On Artemis days (when the Buddha isn't also shown), the cross becomes the Tree of Life.
+        const artemisEl = document.querySelector('.artemis-statue');
+        document.body.classList.toggle('has-tol', !!artemisEl && shown.has(artemisEl) && !document.body.classList.contains('has-buddha'));
       }
 
       applyRotation();
