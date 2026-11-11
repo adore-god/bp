@@ -2345,9 +2345,6 @@ filter:blur(1.5px);
 }
 
 /* Daylight only */
-body.is-night .robin-wrap{
-    display:none;
-}
 
 @keyframes robinVisit {
 
@@ -2572,13 +2569,38 @@ body.is-night .bonsai-foliage-hl { fill: #1a2f16; }
   transform: translateX(14px);
 }
 
+/* ---------- single menu ---------- */
+.menu-btn{position:fixed;top:14px;right:14px;z-index:22;width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:#f2f2f2;opacity:.35;cursor:pointer;display:grid;place-items:center;transition:opacity .2s;-webkit-tap-highlight-color:transparent}
+.menu-btn:hover,.menu-btn.is-active,.menu-btn[aria-expanded="true"]{opacity:.8}
+.menu-btn span{display:block;width:3px;height:3px;border-radius:50%;background:currentColor;box-shadow:-7px 0 currentColor,7px 0 currentColor}
+.menu-pop{position:fixed;top:54px;right:14px;z-index:22;width:min(80vw,210px);padding:6px;
+  background:linear-gradient(165deg,var(--room-wash),transparent 65%),linear-gradient(165deg,rgba(10,12,18,.92),rgba(20,15,12,.92));
+  backdrop-filter:blur(8px);border:1px solid var(--frame-glow);border-radius:8px;
+  box-shadow:0 10px 30px rgba(0,0,0,.65),0 0 36px var(--frame-glow);transition:transform .25s ease,opacity .25s ease}
+.menu-pop.is-closed{transform:translateY(-8px);opacity:0;pointer-events:none}
+.menu-item{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:12px 10px;background:transparent;border:0;border-radius:6px;color:#e8dcc8;font:inherit;font-size:.8rem;letter-spacing:.03em;cursor:pointer;text-align:left}
+.menu-item:hover{background:var(--frame-glow)}
+.menu-state{font-size:.68rem;opacity:.65}
+.sound-hint{position:fixed;top:19px;right:54px;z-index:21;padding:6px 12px;border:1px solid var(--frame-glow);border-radius:14px;background:rgba(10,12,18,.75);backdrop-filter:blur(6px);color:#e8dcc8;font:inherit;font-size:.72rem;letter-spacing:.03em;cursor:pointer;opacity:0;transform:translateX(6px);pointer-events:none;transition:opacity .6s ease,transform .6s ease}
+.sound-hint.is-visible{opacity:.9;transform:none;pointer-events:auto}
+
+/* Daytime visitors only appear while the sun is clearly up */
+body:not(.is-daylit) .dove-wrap,
+body:not(.is-daylit) .butterfly-wrap,
+body:not(.is-daylit) .robin-wrap{visibility:hidden}
+
 </style>
 </head>
 <body>
 
-<button id="audioToggle" onclick="toggleAudio()" style="border:0;color:#f2f2f2;background:transparent;position:fixed;top:16px;right:16px;z-index:10;opacity:0.2;cursor:pointer;">
-    🔊
-</button>
+<button id="menuBtn" class="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="menuPop" onclick="toggleMenu()"><span></span></button>
+<div class="menu-pop is-closed" id="menuPop" role="menu">
+  <button class="menu-item" role="menuitem" onclick="chooseSound(DAY_TRACK)"><span>Birdsong</span><span class="menu-state" id="birdState"></span></button>
+  <button class="menu-item" role="menuitem" onclick="chooseSound(NIGHT_TRACK)"><span>Night sounds</span><span class="menu-state" id="nightState"></span></button>
+  <button class="menu-item" role="menuitem" onclick="openFromMenu('bell')"><span>Prayer bell</span></button>
+  <button class="menu-item" role="menuitem" onclick="openFromMenu('verse')"><span>Scripture</span></button>
+</div>
+<button class="sound-hint" id="soundHint" onclick="toggleAudio()">Tap for ambient sound</button>
 
 <audio id="ambienceAudio" src="bird-song.mp3" loop preload="none"></audio>
 
@@ -2599,6 +2621,8 @@ body.is-night .bonsai-foliage-hl { fill: #1a2f16; }
 
   function toggleAudio() {
     if (ambienceAudio.paused) {
+      manualTrack = false;
+      if (lastPhase) updateAmbienceTrack(lastPhase);
       ambienceAudio.play().catch(error => {
         console.error("Audio playback failed or was blocked by browser:", error);
       });
@@ -2607,7 +2631,57 @@ body.is-night .bonsai-foliage-hl { fill: #1a2f16; }
     }
   }
 
+  const menuPop = document.getElementById('menuPop');
+  const menuBtn = document.getElementById('menuBtn');
+  const birdState = document.getElementById('birdState');
+  const nightState = document.getElementById('nightState');
+  const soundHint = document.getElementById('soundHint');
+
+  function hideSoundHint() { soundHint.classList.remove('is-visible'); }
+  function toggleMenu(force) {
+    const open = (typeof force === 'boolean') ? force : menuPop.classList.contains('is-closed');
+    menuPop.classList.toggle('is-closed', !open);
+    menuBtn.setAttribute('aria-expanded', open);
+    if (open) hideSoundHint();
+  }
+  function openFromMenu(which) {
+    toggleMenu(false);
+    if (which === 'bell') { toggleDrawer(false); toggleBellPanel(true); }
+    else { toggleBellPanel(false); toggleDrawer(true); }
+  }
+  function updateSoundUI() {
+    const on = !ambienceAudio.paused;
+    birdState.textContent = (on && currentTrack === DAY_TRACK) ? 'On' : '';
+    nightState.textContent = (on && currentTrack === NIGHT_TRACK) ? 'On' : '';
+  }
+  ['play', 'playing', 'pause'].forEach(ev => ambienceAudio.addEventListener(ev, updateSoundUI));
+  ambienceAudio.addEventListener('play', hideSoundHint);
+
+  // Pick a sound by hand; tapping the one that's playing stops it.
+  // A manual pick overrides the automatic day/night switch.
+  let manualTrack = false;
+  let lastPhase = null;
+  function chooseSound(track) {
+    if (!ambienceAudio.paused && currentTrack === track) { ambienceAudio.pause(); return; }
+    manualTrack = true;
+    if (currentTrack !== track) {
+      currentTrack = track;
+      ambienceAudio.src = track;
+      ambienceAudio.volume = (track === NIGHT_TRACK) ? NIGHT_VOLUME : DAY_VOLUME;
+    }
+    updateSoundUI();
+    ambienceAudio.play().catch(error => console.error("Audio playback failed:", error));
+  }
+  document.addEventListener('click', e => {
+    if (!menuPop.contains(e.target) && !menuBtn.contains(e.target)) toggleMenu(false);
+  });
+  // Gentle one-time nudge so people know sound is available
+  setTimeout(() => { if (ambienceAudio.paused) soundHint.classList.add('is-visible'); }, 1500);
+  setTimeout(hideSoundHint, 11000);
+
   function updateAmbienceTrack(phase) {
+    lastPhase = phase;
+    if (manualTrack) return;
     const wanted = (phase === 'night') ? NIGHT_TRACK : DAY_TRACK;
 
     if (wanted !== currentTrack) {
@@ -2631,9 +2705,6 @@ body.is-night .bonsai-foliage-hl { fill: #1a2f16; }
 </script>
 
 <!-- Prayer Bell: rings on a repeating interval, length adjustable while it runs -->
-<button id="bellToggle" class="bell-toggle" onclick="toggleBellPanel()" aria-label="Prayer bell settings">
-  🔔
-</button>
 
 <div class="bell-panel is-closed" id="bellPanel">
   <div class="drawer-header">
@@ -2675,7 +2746,7 @@ body.is-night .bonsai-foliage-hl { fill: #1a2f16; }
     let bellEnabled = false;
     let nextBellAt = null;
 
-    const toggleBtn = document.getElementById('bellToggle');
+    const toggleBtn = document.getElementById('menuBtn');
     const panelEl = document.getElementById('bellPanel');
     const enableEl = document.getElementById('bellEnable');
     const intervalEl = document.getElementById('bellIntervalInput');
@@ -4254,10 +4325,9 @@ stroke-width="2"/>
   </div>
 
   <!-- Re-open Toggle -->
-  <button class="drawer-open-toggle" onclick="toggleDrawer(true)">📖</button>
 
   <!-- Closeable Floating Neville Goddard Article -->
-  <div class="dictionary-drawer" id="dictionaryDrawer">
+  <div class="dictionary-drawer is-closed" id="dictionaryDrawer">
     <div class="drawer-header">
       <span class="drawer-title" id="saying-verse">John 8:18</span>
       <button class="close-btn" onclick="toggleDrawer(false)" aria-label="Close">&times;</button>
@@ -4345,6 +4415,7 @@ stroke-width="2"/>
     const butterflyEl = document.getElementById('butterflyEl');
     if (butterflyEl) {
       const flyButterfly = () => {
+        if (!document.body.classList.contains('is-daylit')) { setTimeout(flyButterfly, 60000); return; }
         void butterflyEl.offsetWidth; // force reflow so the animation can restart
         butterflyEl.classList.add('is-flying');
       };
@@ -4358,6 +4429,7 @@ stroke-width="2"/>
     const robinEl = document.getElementById('robinEl');
     if (robinEl) {
       const visitRobin = () => {
+        if (!document.body.classList.contains('is-daylit')) { setTimeout(visitRobin, 60000); return; }
         void robinEl.offsetWidth; // force reflow so the animation can restart
         robinEl.classList.add('is-visiting');
       };
@@ -5078,6 +5150,8 @@ stroke-width="2"/>
       hourGlossEl.textContent = hour.gloss;
 
       setTimeOfDayClass(timeOfDayPhase(minutes));
+      // daytime visitors follow the sun itself, not the clock
+      document.body.classList.toggle('is-daylit', sOp > 0.6 && mOp < 0.2);
     }
 
     function setDebugPhase(hh, mm) {
