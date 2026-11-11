@@ -2659,6 +2659,129 @@ body.is-night .bonsai-foliage-hl { fill: #1a2f16; }
 
 body.is-raining .cloud{filter:blur(14px) brightness(.5);opacity:1}
 
+/* ---------- Owl: night/dusk visitor that glides in and lands on the sill like the robin ---------- */
+.owl-wrap{
+    /* plumage (dusk values by default; night overrides below) */
+    --owl-back:#8f7352;
+    --owl-wing:#7a5e3c;
+    --owl-wing-dk:#5e4730;
+    --owl-wing-edge:#b59a70;
+    --owl-disc:#d9ccb2;
+    --owl-disc-rim:#8c785a;
+    --owl-breast:#e0d4bb;
+    --owl-fleck:#5a4631;
+    --owl-beak:#b9ad8e;
+    --owl-foot:#b89a80;
+    --owl-eye:#0b0907;
+
+    position:absolute;
+    z-index:5;
+    width:20%;
+    left:55%;
+    bottom:0;
+    opacity:0;
+    pointer-events:none;
+    transform-origin:center bottom;
+}
+
+body.is-night .owl-wrap{
+    --owl-back:#6c583d;
+    --owl-wing:#5a4833;
+    --owl-wing-dk:#43362a;
+    --owl-wing-edge:#8a7655;
+    --owl-disc:#bdb7aa;
+    --owl-disc-rim:#6f6250;
+    --owl-breast:#c6bfb0;
+    --owl-fleck:#40342a;
+    --owl-beak:#8f8672;
+    --owl-foot:#8a7566;
+    filter:drop-shadow(0 0 5px rgba(180,198,230,.16));
+}
+
+/* Only appears once the light has gone: dusk and night */
+body:not(.is-night):not(.is-dusk) .owl-wrap{visibility:hidden}
+
+/* Added by JS at random, spaced-out intervals so a visit only plays occasionally */
+.owl-wrap.is-visiting{
+    animation: owlVisit 40s ease-in-out 1 both;
+}
+
+.owl-wrap svg{
+    width:100%;
+    display:block;
+    overflow:visible;
+}
+
+.owl-body-back   { fill: var(--owl-back); }
+.owl-wing-fold   { fill: var(--owl-wing); }
+.owl-wing-fold-dk{ fill: var(--owl-wing-dk); }
+.owl-breast      { fill: var(--owl-breast); }
+.owl-fleck       { fill: var(--owl-fleck); opacity:.55; }
+.owl-head-fill   { fill: var(--owl-back); }
+.owl-disc        { fill: var(--owl-disc); }
+.owl-disc-rim    { fill: none; stroke: var(--owl-disc-rim); stroke-width:1.4; opacity:.7; }
+.owl-beak        { fill: var(--owl-beak); }
+.owl-eye         { fill: var(--owl-eye); transform-box: fill-box; transform-origin:center; }
+.owl-foot        { stroke: var(--owl-foot); fill:none; stroke-width:2.2; stroke-linecap:round; }
+.owl-wing-open   { fill: var(--owl-wing); }
+.owl-wing-open-dk{ fill: var(--owl-wing-dk); }
+.owl-wing-bar    { stroke: var(--owl-wing-edge); fill:none; stroke-width:1.1; opacity:.6; stroke-linecap:round; }
+
+/* Wings: spread while flying in and out, folded while perched */
+.owl-wings-open{ opacity:0; }
+.owl-wrap.is-visiting .owl-wings-open{ animation: owlWingsShow 40s linear 1 both; }
+.owl-wrap.is-visiting .owl-wings-folded{ animation: owlWingsHide 40s linear 1 both; }
+.owl-wing-flap{ transform-origin: 32px 68px; }
+.owl-wrap.is-visiting .owl-wing-flap{ animation: owlFlap .5s ease-in-out infinite; }
+
+/* Slow head turns and sleepy blinks while perched */
+.owl-head{ transform-origin: 50px 58px; }
+.owl-wrap.is-visiting .owl-head{ animation: owlHead 10s ease-in-out infinite; }
+.owl-wrap.is-visiting .owl-eye{ animation: owlBlink 6s ease-in-out infinite; }
+.owl-body-group{ transform-origin: 50px 120px; }
+.owl-wrap.is-visiting .owl-body-group{ animation: owlBreath 6s ease-in-out infinite; }
+
+@keyframes owlVisit{
+    0%   { opacity:0;   transform: translate(190%,-230%) scale(.5) rotate(10deg); }
+    2%   { opacity:.95; }
+    5%   { opacity:.95; transform: translate(95%,-110%) scale(.75) rotate(5deg); }
+    9%   { opacity:.95; transform: translate(0,0) scale(1) rotate(0deg); }
+    9.8% { opacity:.95; transform: translate(0,3%) scale(1.02,.98); }
+    10.8%{ opacity:.95; transform: translate(0,0) scale(1); }
+    80%  { opacity:.95; transform: translate(0,0) scale(1); }
+    82%  { opacity:.95; transform: translate(0,3%) scale(1.02,.97); }
+    88%  { opacity:.95; transform: translate(-70%,-85%) scale(.9) rotate(-5deg); }
+    100% { opacity:0;   transform: translate(-230%,-260%) scale(.35) rotate(-10deg); }
+}
+@keyframes owlWingsShow{
+    0%,8.6%   { opacity:1; }
+    9.6%,80.4%{ opacity:0; }
+    81.4%,100%{ opacity:1; }
+}
+@keyframes owlWingsHide{
+    0%,8.6%   { opacity:0; }
+    9.6%,80.4%{ opacity:1; }
+    81.4%,100%{ opacity:0; }
+}
+@keyframes owlFlap{
+    0%,100%{ transform: rotate(-14deg); }
+    50%    { transform: rotate(24deg); }
+}
+@keyframes owlHead{
+    0%,18%,100%{ transform: rotate(0deg) translateX(0); }
+    26%,44%    { transform: rotate(-11deg) translateX(-1.2px); }
+    54%,62%    { transform: rotate(0deg) translateX(0); }
+    70%,86%    { transform: rotate(9deg) translateX(1.2px); }
+}
+@keyframes owlBlink{
+    0%,91%,100%{ transform: scaleY(1); }
+    94%,96%    { transform: scaleY(.08); }
+}
+@keyframes owlBreath{
+    0%,100%{ transform: scale(1); }
+    50%    { transform: scale(1.015,1.025); }
+}
+
 /* Daytime visitors only appear while the sun is clearly up */
 body:not(.is-daylit) .dove-wrap,
 body:not(.is-daylit) .butterfly-wrap,
@@ -4092,6 +4215,69 @@ stroke-width="2"/>
 </div>
 
 
+<div class="owl-wrap" id="owlEl" aria-hidden="true">
+
+<svg viewBox="0 0 100 130">
+
+    <!-- Spread wings: only visible while gliding in and out -->
+    <g class="owl-wings-open">
+      <g class="owl-wing-flap">
+        <path class="owl-wing-open" d="M33 66 C14 48 -12 54 -26 80 C-19 77 -13 81 -9 90 C-4 85 3 89 7 97 C13 92 21 94 30 99 Z"/>
+        <path class="owl-wing-open-dk" opacity=".5" d="M33 74 C16 64 -2 66 -14 80 C-6 80 0 85 4 92 C12 89 22 92 31 98 Z"/>
+        <path class="owl-wing-bar" d="M30 78 C16 72 2 74 -10 84 M30 86 C18 82 6 84 -2 92 M30 93 C21 91 14 92 8 97"/>
+      </g>
+      <g transform="translate(100 0) scale(-1 1)">
+      <g class="owl-wing-flap">
+        <path class="owl-wing-open" d="M33 66 C14 48 -12 54 -26 80 C-19 77 -13 81 -9 90 C-4 85 3 89 7 97 C13 92 21 94 30 99 Z"/>
+        <path class="owl-wing-open-dk" opacity=".5" d="M33 74 C16 64 -2 66 -14 80 C-6 80 0 85 4 92 C12 89 22 92 31 98 Z"/>
+        <path class="owl-wing-bar" d="M30 78 C16 72 2 74 -10 84 M30 86 C18 82 6 84 -2 92 M30 93 C21 91 14 92 8 97"/>
+      </g>
+      </g>
+    </g>
+
+    <g class="owl-body-group">
+
+      <!-- Body: golden-buff back with a pale, softly flecked breast -->
+      <ellipse class="owl-body-back" cx="50" cy="90" rx="25" ry="34"/>
+      <ellipse class="owl-breast" cx="50" cy="94" rx="17" ry="28"/>
+      <g class="owl-fleck">
+        <circle cx="44" cy="82" r="1.3"/><circle cx="56" cy="84" r="1.3"/><circle cx="50" cy="90" r="1.4"/>
+        <circle cx="42" cy="96" r="1.2"/><circle cx="58" cy="97" r="1.2"/><circle cx="50" cy="103" r="1.3"/>
+        <circle cx="45" cy="109" r="1.1"/><circle cx="55" cy="110" r="1.1"/>
+      </g>
+
+      <!-- Folded wings, hugging the sides -->
+      <g class="owl-wings-folded">
+        <path class="owl-wing-fold" d="M28 68 C19 90 23 114 36 123 L41 100 C38 90 34 78 28 68 Z"/>
+        <path class="owl-wing-fold" d="M72 68 C81 90 77 114 64 123 L59 100 C62 90 66 78 72 68 Z"/>
+        <path class="owl-wing-fold-dk" opacity=".55" d="M26 92 C25 104 29 114 36 121 L38 106 C33 103 29 98 26 92 Z"/>
+        <path class="owl-wing-fold-dk" opacity=".55" d="M74 92 C75 104 71 114 64 121 L62 106 C67 103 71 98 74 92 Z"/>
+      </g>
+
+      <!-- Talons gripping the sill -->
+      <path class="owl-foot" d="M41 121 L41 126 M41 126 L37 129 M41 126 L41.5 129.5 M41 126 L45 129"/>
+      <path class="owl-foot" d="M59 121 L59 126 M59 126 L55 129 M59 126 L58.5 129.5 M59 126 L63 129"/>
+
+      <!-- Head: heart-shaped facial disc, dark eyes, small hooked beak -->
+      <g class="owl-head">
+        <ellipse class="owl-head-fill" cx="50" cy="40" rx="27" ry="25"/>
+        <circle class="owl-disc" cx="40.5" cy="42" r="15.5"/>
+        <circle class="owl-disc" cx="59.5" cy="42" r="15.5"/>
+        <path class="owl-disc" d="M50 24 L56 40 L50 62 L44 40 Z"/>
+        <path class="owl-disc-rim" d="M50 27 C 44 22 30 24 26 38 C 24 50 34 59 46 58 L50 61 L54 58 C 66 59 76 50 74 38 C 70 24 56 22 50 27 Z"/>
+        <path class="owl-beak" d="M47 41 C47 40 53 40 53 41 L50.8 53 Q50 54.5 49.2 53 Z"/>
+        <circle class="owl-eye" cx="41" cy="39" r="4.3"/>
+        <circle class="owl-eye" cx="59" cy="39" r="4.3"/>
+        <circle cx="42.4" cy="37.6" r="1.1" fill="#fff" opacity=".85"/>
+        <circle cx="60.4" cy="37.6" r="1.1" fill="#fff" opacity=".85"/>
+      </g>
+
+    </g>
+
+</svg>
+
+</div>
+
           <div class="tracery"></div>
           
   <!-- Ornamental Standing Sea Cross -->
@@ -4828,6 +5014,23 @@ stroke-width="2"/>
         setTimeout(visitRobin, randomDelayMs(4, 8)); // next visit in ~4-8 min
       });
       setTimeout(visitRobin, randomDelayMs(1, 3)); // first visit soon after load
+    }
+
+    const owlEl = document.getElementById('owlEl');
+    if (owlEl) {
+      const isOwlTime = () => document.body.classList.contains('is-night') || document.body.classList.contains('is-dusk');
+      const visitOwl = () => {
+        if (!isOwlTime() || document.body.classList.contains('is-raining')) { setTimeout(visitOwl, 60000); return; }
+        void owlEl.offsetWidth; // force reflow so the animation can restart
+        owlEl.classList.add('is-visiting');
+      };
+      owlEl.addEventListener('animationend', (e) => {
+        if (e.target !== owlEl) return; // the wing animations bubble up too; only the visit itself counts
+        owlEl.classList.remove('is-visiting');
+        setTimeout(visitOwl, randomDelayMs(5, 9)); // next visit in ~5-9 min
+      });
+      setTimeout(visitOwl, randomDelayMs(1, 2)); // first visit soon after load
+      window.debugOwlVisit = () => { owlEl.classList.remove('is-visiting'); void owlEl.offsetWidth; owlEl.classList.add('is-visiting'); };
     }
 
     // ---------- generate stars ----------
