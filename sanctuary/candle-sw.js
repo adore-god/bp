@@ -1,5 +1,5 @@
 // Service worker for the Sanctuary Candle app.
-const CACHE = 'candle-sanctuary-v2';
+const CACHE = 'candle-sanctuary-v3';
 const CORE = [
   './candle-sanctuary-hnnh.html',
   './candle-manifest.json',
