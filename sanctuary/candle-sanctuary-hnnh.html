@@ -2626,7 +2626,7 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
 
   function toggleAudio() {
     if (ambienceAudio.paused) {
-      manualTrack = false;
+      userPick = null; weatherSuppressed = false;
       if (lastPhase) updateAmbienceTrack(lastPhase);
       ambienceAudio.play().catch(error => {
         console.error("Audio playback failed or was blocked by browser:", error);
@@ -2666,7 +2666,8 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
 
   // Pick a sound by hand; tapping the one that's playing stops it.
   // A manual pick overrides the automatic day/night switch.
-  let manualTrack = false;
+  let userPick = null;            // track chosen by hand from the menu (null = automatic)
+  let weatherSuppressed = false;  // a hand pick made during rain holds until the weather next changes
   let lastPhase = null;
   // ---- rain: weather state (the rain sound is rain.mp3, a normal track) ----
   let rainTarget = 0, wet = 0;       // rainTarget: raining now (0/1); wet: eased 0..1 for visuals
@@ -2676,17 +2677,13 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
   function stopSound() { ambienceAudio.pause(); }
 
   // When the weather changes while the automatic sound is playing, follow it.
-  function syncAutoSound() { if (lastPhase) updateAmbienceTrack(lastPhase); }
+  function syncAutoSound() { applyTrack(); }
 
   function chooseSound(track) {
     if (!ambienceAudio.paused && currentTrack === track) { stopSound(); return; }
-    manualTrack = true;
-    if (currentTrack !== track) {
-      currentTrack = track;
-      ambienceAudio.src = track;
-      ambienceAudio.volume = trackVolume(track);
-    }
-    updateSoundUI();
+    userPick = track;
+    weatherSuppressed = true;   // an explicit tap wins until the weather next changes
+    applyTrack();
     ambienceAudio.play().catch(error => console.error("Audio playback failed:", error));
   }
   document.addEventListener('click', e => {
@@ -2696,30 +2693,33 @@ body:not(.is-daylit) .robin-wrap{visibility:hidden}
   setTimeout(() => { if (ambienceAudio.paused) soundHint.classList.add('is-visible'); }, 1500);
   setTimeout(hideSoundHint, 11000);
 
-  function updateAmbienceTrack(phase) {
-    lastPhase = phase;
-    if (manualTrack) return;
-    // automatic choice: rain when it is raining, otherwise birds by day and night sounds after dark
-    const wanted = rainTarget ? RAIN_TRACK : ((phase === 'night') ? NIGHT_TRACK : DAY_TRACK);
-
+  // Which track should play now? A hand-picked Rain stays put. Otherwise rain
+  // takes over while it is raining (unless the listener just tapped another
+  // sound), and when it stops the listener's pick, or the day/night sound, returns.
+  function desiredTrack() {
+    if (userPick === RAIN_TRACK) return RAIN_TRACK;
+    if (rainTarget && !weatherSuppressed) return RAIN_TRACK;
+    if (userPick) return userPick;
+    return (lastPhase === 'night') ? NIGHT_TRACK : DAY_TRACK;
+  }
+  function applyTrack() {
+    const wanted = desiredTrack();
     if (wanted !== currentTrack) {
       currentTrack = wanted;
       const wasPlaying = !ambienceAudio.paused;
-
       ambienceAudio.src = wanted;
-
-      // Set the correct volume for the current track
       ambienceAudio.volume = trackVolume(wanted);
-
       if (wasPlaying) {
-        ambienceAudio.play().catch(error => {
-          console.error("Track switch error:", error);
-        });
+        ambienceAudio.play().catch(error => console.error("Track switch error:", error));
       }
     }
+    updateSoundUI();
   }
-  
-  
+  function updateAmbienceTrack(phase) {
+    lastPhase = phase;
+    applyTrack();
+  }
+
 </script>
 
 <!-- Prayer Bell: rings on a repeating interval, length adjustable while it runs -->
@@ -5181,6 +5181,7 @@ stroke-width="2"/>
     function setRain(on) {
       if (!!rainTarget === on) return;
       rainTarget = on ? 1 : 0;
+      weatherSuppressed = false;
       document.body.classList.toggle('is-raining', on);
       rainLayer.show(on);
       syncAutoSound();
