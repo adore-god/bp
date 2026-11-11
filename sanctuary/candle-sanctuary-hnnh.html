@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <title>Sanctuary Candle: A Vigil Light | The Bible Plot</title>
-<meta name="description" content="A living vigil candle that tracks real time against a moving sky, sun, moon and stars, and names the canonical hour of prayer as it passes. A quiet, wordless space on The Bible Plot.">
-<link rel="canonical" href="https://thebibleplot.com/candle-sanctuary-hnnh.html">
+<meta name="description" content="A living vigil candle that tracks real time against a moving sky, sun, moon and stars, and names the canonical hour of prayer as it passes. A quiet, wordless space on The Bible Plot. Set a prayer or mindfulness bell, and see which icon appears today.">
+<link rel="canonical" href="https://thebibleplot.com/sanctuary/candle-sanctuary-hnnh.html">
 <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="The Bible Plot">
 <meta property="og:title" content="Sanctuary Candle: A Vigil Light | The Bible Plot">
-<meta property="og:description" content="A living vigil candle that tracks real time against a moving sky, sun, moon and stars, and names the canonical hour of prayer as it passes. A quiet, wordless space on The Bible Plot.">
-<meta property="og:url" content="https://thebibleplot.com/candle-sanctuary-hnnh.html">
+<meta property="og:description" content="A living vigil candle that tracks real time against a moving sky, sun, moon and stars, and names the canonical hour of prayer as it passes. A quiet, wordless space on The Bible Plot. Set a prayer or mindfulness bell, and see which icon appears today.">
+<meta property="og:url" content="https://thebibleplot.com/sanctuary/candle-sanctuary-hnnh.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Sanctuary Candle: A Vigil Light | The Bible Plot">
-<meta name="twitter:description" content="A living vigil candle that tracks real time against a moving sky, sun, moon and stars, and names the canonical hour of prayer as it passes. A quiet, wordless space on The Bible Plot.">
+<meta name="twitter:description" content="A living vigil candle that tracks real time against a moving sky, sun, moon and stars, and names the canonical hour of prayer as it passes. A quiet, wordless space on The Bible Plot. Set a prayer or mindfulness bell, and see which icon appears today.">
 <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
 <meta name="theme-color" content="#05070d">
 <meta name="mobile-web-app-capable" content="yes">
@@ -118,6 +118,12 @@
 @property --john-robe-fold   { syntax: '<color>';  inherits: true; initial-value: #1c331c; }
 @property --john-hair        { syntax: '<color>';  inherits: true; initial-value: #6b4a28; }
 
+/* ---------- statue of the seated Buddha: same pedestal stone and skin tone, same night/day + candle warmth ramp ---------- */
+@property --buddha-robe       { syntax: '<color>';  inherits: true; initial-value: #c2762a; }
+@property --buddha-robe-fold  { syntax: '<color>';  inherits: true; initial-value: #8f4f18; }
+@property --buddha-hair       { syntax: '<color>';  inherits: true; initial-value: #2a2d3a; }
+@property --buddha-base       { syntax: '<color>';  inherits: true; initial-value: #8c7052; }
+
 /* ---------- angel-spirit: wing and halo track the same sky/candle ramp as Mary and the wooden figure ---------- */
 @property --angel-wing-top   { syntax: '<color>';  inherits: true; initial-value: #faf8f2; }
 @property --angel-wing-bot   { syntax: '<color>';  inherits: true; initial-value: #d8d0c0; }
@@ -157,6 +163,8 @@
     --mary-face 14s linear, --mary-halo-opacity 14s linear, --mary-skin 14s linear,
     --paul-robe 14s linear, --paul-robe-fold 14s linear, --paul-hair 14s linear,
     --peter-robe 14s linear, --peter-robe-fold 14s linear, --peter-mantle 14s linear, --peter-hair 14s linear,
+    --john-robe 14s linear, --john-robe-fold 14s linear, --john-hair 14s linear,
+    --buddha-robe 14s linear, --buddha-robe-fold 14s linear, --buddha-hair 14s linear, --buddha-base 14s linear,
     --angel-wing-top 14s linear, --angel-wing-bot 14s linear, --angel-halo 14s linear,
     --angel-halo-soft 14s linear, --angel-glow 14s linear;
   font-family: 'Inter', sans-serif;
@@ -2072,6 +2080,43 @@ body.is-night .john-statue {
 }
 
 
+/* ---------- Statue of the seated Buddha ---------- */
+.buddha-statue {
+  position: absolute;
+  bottom: 48%;
+  left: 50%;
+  z-index: 2;
+  width: 36px;
+  height: 80px;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+}
+
+body.is-night .buddha-statue {
+  animation: figureGlow 4s infinite ease-in-out;
+  animation-delay: -1.5s;
+}
+
+.buddha-base { fill: var(--buddha-base); }
+.buddha-lotus { fill: var(--buddha-base); opacity: 0.85; }
+.buddha-lotus-line { fill: none; stroke: var(--buddha-robe-fold); stroke-width: 0.35; opacity: 0.5; }
+.buddha-robe { fill: url(#buddhaRobeGradient); }
+.buddha-robe-fold {
+  fill: none;
+  stroke: var(--buddha-robe-fold);
+  stroke-width: 0.5;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+.buddha-hands { fill: var(--mary-skin); }
+.buddha-face { fill: var(--mary-skin); }
+.buddha-hair { fill: var(--buddha-hair); }
+.buddha-robe-stop-top { stop-color: var(--buddha-robe); }
+.buddha-robe-stop-bot { stop-color: var(--buddha-robe-fold); }
+.buddha-halo { opacity: var(--mary-halo-opacity); }
+.buddha-halo-stop-in { stop-color: rgba(255, 214, 150, 0.6); }
+.buddha-halo-stop-out { stop-color: rgba(255, 214, 150, 0); }
+
 /* ---------------- NIGHT MOTH (circles the candle flame) ---------------- */
 
 .moth-wrap{
@@ -3950,6 +3995,59 @@ stroke-width="2"/>
   </svg>
 </div>
 
+  <!-- Statue of the seated Buddha (meditation posture, hands in lap) -->
+<div class="buddha-statue" aria-hidden="true">
+  <svg viewBox="0 0 36 80" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="buddhaHaloGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" class="buddha-halo-stop-in" />
+        <stop offset="100%" class="buddha-halo-stop-out" />
+      </radialGradient>
+      <linearGradient id="buddhaRobeGradient" x1="30%" y1="0%" x2="60%" y2="100%">
+        <stop offset="0" class="buddha-robe-stop-top"/>
+        <stop offset="1" class="buddha-robe-stop-bot"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Soft halo glow behind the head -->
+    <circle class="buddha-halo" cx="18" cy="31" r="11" fill="url(#buddhaHaloGlow)" />
+
+    <!-- Lotus pedestal -->
+    <ellipse cx="18" cy="76" rx="14" ry="3" class="buddha-base" />
+    <path class="buddha-lotus" d="M 5,74 C 6,71 9,70 11,72 C 12,69 15,68 18,70 C 21,68 24,69 25,72 C 27,70 30,71 31,74 C 28,77 8,77 5,74 Z" />
+    <path class="buddha-lotus-line" d="M 11,72 C 11,73.5 11.5,75 12,76 M 18,70 L 18,76 M 25,72 C 25,73.5 24.5,75 24,76" />
+
+    <!-- Crossed legs: wide folded base of the robe -->
+    <path class="buddha-robe" d="M 3,69 C 3,61 9,58 18,58 C 27,58 33,61 33,69 C 33,73 27,75 18,75 C 9,75 3,73 3,69 Z" />
+    <path class="buddha-robe-fold" d="M 6,68 C 10,71 14,72 18,72 M 30,68 C 26,71 22,72 18,72 M 9,63 C 12,65 15,66 18,66" fill="none" />
+
+    <!-- Torso, robe draped over the shoulders -->
+    <path class="buddha-robe" d="M 18,40 C 13,40 10.5,47 9.5,58 L 26.5,58 C 25.5,47 23,40 18,40 Z" />
+    <path class="buddha-robe-fold" d="M 14,44 C 13,50 13,55 14,58 M 22,44 C 23,50 23,55 22,58" fill="none" />
+
+    <!-- Arms falling from the shoulders to the lap -->
+    <path class="buddha-robe" d="M 12.5,42 C 9,48 8,55 11,61 L 14,60 C 12,55 12,49 14.5,43 Z" />
+    <path class="buddha-robe" d="M 23.5,42 C 27,48 28,55 25,61 L 22,60 C 24,55 24,49 21.5,43 Z" />
+
+    <!-- Hands resting in the lap, meditation posture -->
+    <ellipse class="buddha-hands" cx="18" cy="61" rx="5" ry="2" />
+
+    <!-- Ears with elongated lobes -->
+    <ellipse class="buddha-face" cx="13.3" cy="34.5" rx="0.8" ry="2.4" />
+    <ellipse class="buddha-face" cx="22.7" cy="34.5" rx="0.8" ry="2.4" />
+
+    <!-- Neck -->
+    <rect class="buddha-face" x="16.4" y="37" width="3.2" height="3.4" />
+
+    <!-- Face -->
+    <ellipse cx="18" cy="33" rx="3.9" ry="4.7" class="buddha-face" />
+
+    <!-- Tightly curled hair with the raised crown (ushnisha) -->
+    <path class="buddha-hair" d="M 14,30.6 C 14,26.8 15.8,25.4 18,25.4 C 20.2,25.4 22,26.8 22,30.6 C 20.8,28.9 19.5,28.4 18,28.4 C 16.5,28.4 15.2,28.9 14,30.6 Z" />
+    <circle class="buddha-hair" cx="18" cy="24.2" r="2.1" />
+  </svg>
+</div>
+
   <!-- Small Tea Lights (foreground, flanking the main candle) -->
   <div class="tea-light tea-light-one">
     <div class="tea-light-glow"></div>
@@ -4158,7 +4256,7 @@ stroke-width="2"/>
       const item = bibleDictionary[index];
       document.getElementById('saying-verse').textContent = item.verse;
       document.getElementById('saying-quote').textContent = `"${item.quote}"`;
-      document.getElementById('saying-interpretation').textContent = item.interpretation;
+      document.getElementById('saying-interpretation').textContent = item.interpretation || '';
     }
 
     function nextSaying() {
@@ -4373,6 +4471,16 @@ stroke-width="2"/>
     const PETER_MANTLE_NIGHT     = [42,32,12],  PETER_MANTLE_DAY     = [176,140,58];
     const PETER_HAIR_NIGHT       = [58,56,54],  PETER_HAIR_DAY       = [172,168,160];
 
+    // Statue of John: green robe and warm brown hair, same ramp as the others.
+    const JOHN_ROBE_NIGHT        = [20,34,20],  JOHN_ROBE_DAY        = [72,112,70];
+    const JOHN_ROBE_FOLD_NIGHT   = [13,23,13],  JOHN_ROBE_FOLD_DAY   = [44,74,44];
+    const JOHN_HAIR_NIGHT        = [42,30,18],  JOHN_HAIR_DAY        = [124,88,48];
+
+    // Seated Buddha: saffron robe, near-black blue hair, same pedestal stone as Mary.
+    const BUDDHA_ROBE_NIGHT      = [74,42,14],  BUDDHA_ROBE_DAY      = [212,128,44];
+    const BUDDHA_ROBE_FOLD_NIGHT = [48,26,8],   BUDDHA_ROBE_FOLD_DAY = [150,82,26];
+    const BUDDHA_HAIR_NIGHT      = [14,15,22],  BUDDHA_HAIR_DAY      = [52,56,74];
+
     // Angel wing/halo: same night/day-anchor + candle-warmth approach as
     // Mary and the wooden figure. Wings read as cool moonlit white-grey at
     // night, warm toward candlelight as the flame becomes the dominant
@@ -4533,6 +4641,14 @@ stroke-width="2"/>
       const peterMantle   = lerpColor(lerpColor(lerpColor(PETER_MANTLE_NIGHT, PETER_MANTLE_DAY, intensity), GOLDEN_LIGHT, maryGold * 0.25), CANDLE_WARM, candleFactor * 0.50);
       const peterHair      = lerpColor(lerpColor(PETER_HAIR_NIGHT, PETER_HAIR_DAY, intensity), CANDLE_WARM, candleFactor * 0.35);
 
+      // John and the seated Buddha: same ramp as Paul and Peter.
+      const johnRobe      = lerpColor(lerpColor(lerpColor(JOHN_ROBE_NIGHT, JOHN_ROBE_DAY, intensity), GOLDEN_LIGHT, maryGold * 0.30), CANDLE_WARM, candleFactor * 0.60);
+      const johnRobeFold  = lerpColor(lerpColor(JOHN_ROBE_FOLD_NIGHT, JOHN_ROBE_FOLD_DAY, intensity), CANDLE_WARM, candleFactor * 0.55);
+      const johnHair      = lerpColor(lerpColor(JOHN_HAIR_NIGHT, JOHN_HAIR_DAY, intensity), CANDLE_WARM, candleFactor * 0.35);
+      const buddhaRobe     = lerpColor(lerpColor(lerpColor(BUDDHA_ROBE_NIGHT, BUDDHA_ROBE_DAY, intensity), GOLDEN_LIGHT, maryGold * 0.30), CANDLE_WARM, candleFactor * 0.55);
+      const buddhaRobeFold = lerpColor(lerpColor(BUDDHA_ROBE_FOLD_NIGHT, BUDDHA_ROBE_FOLD_DAY, intensity), CANDLE_WARM, candleFactor * 0.50);
+      const buddhaHair     = lerpColor(lerpColor(BUDDHA_HAIR_NIGHT, BUDDHA_HAIR_DAY, intensity), CANDLE_WARM, candleFactor * 0.30);
+
       // Angel: wing catches the same golden-hour kiss as Mary's skin/robe,
       // then warms toward candlelight at night; halo ember brightens with
       // the same candle glow used elsewhere.
@@ -4604,6 +4720,14 @@ stroke-width="2"/>
       body.setProperty('--peter-mantle', `rgb(${peterMantle.join(',')})`);
       body.setProperty('--peter-hair', `rgb(${peterHair.join(',')})`);
 
+      body.setProperty('--john-robe', `rgb(${johnRobe.join(',')})`);
+      body.setProperty('--john-robe-fold', `rgb(${johnRobeFold.join(',')})`);
+      body.setProperty('--john-hair', `rgb(${johnHair.join(',')})`);
+      body.setProperty('--buddha-robe', `rgb(${buddhaRobe.join(',')})`);
+      body.setProperty('--buddha-robe-fold', `rgb(${buddhaRobeFold.join(',')})`);
+      body.setProperty('--buddha-hair', `rgb(${buddhaHair.join(',')})`);
+      body.setProperty('--buddha-base', `rgb(${maryBase.join(',')})`);
+
       body.setProperty('--angel-wing-top', `rgb(${angelWingTop.join(',')})`);
       body.setProperty('--angel-wing-bot', `rgb(${angelWingBot.join(',')})`);
       body.setProperty('--angel-halo', `rgb(${angelHalo.join(',')})`);
@@ -4630,7 +4754,7 @@ stroke-width="2"/>
 
     const STAR_IN_START = 1200, STAR_IN_FULL = 1290, STAR_OUT_START = 270, STAR_OUT_FULL = 360;
     function starOpacity(m) {
-      if (m >= STAR_IN_START) return m < STAR_IN_FULL ? clamp((m - STAR_IN_START) / (STAR_IN_START)) : 1;
+      if (m >= STAR_IN_START) return m < STAR_IN_FULL ? clamp((m - STAR_IN_START) / (STAR_IN_FULL - STAR_IN_START)) : 1;
       if (m < STAR_OUT_START) return 1;
       if (m < STAR_OUT_FULL) return clamp(1 - (m - STAR_OUT_START) / (STAR_OUT_FULL - STAR_OUT_START));
       return 0;
@@ -4697,8 +4821,68 @@ stroke-width="2"/>
       return { hh, mm, minutes: hh * 60 + mm };
     }
 
+    // ---------- real sunrise / sunset for today's date ----------
+    // The scene's colour keyframes, sun arc, moon arc and star fades were all
+    // authored around a fixed reference day (sunrise 06:30, sunset 19:00), so
+    // they ignored the season. We now compute the real sunrise and sunset for
+    // the location and the date (NOAA solar equations), then stretch the day
+    // and night halves of the clock so the reference sunrise/sunset land on
+    // the real ones. Change SUN_LAT / SUN_LON to match a different place.
+    const SUN_LAT = 51.5074, SUN_LON = -0.1278; // London
+    const REF_SUNRISE = 390, REF_SUNSET = 1140;
+
+    function londonDateParts(now) {
+      const p = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false
+      }).formatToParts(now);
+      const get = t => parseInt(p.find(x => x.type === t).value, 10);
+      return { y: get('year'), mo: get('month'), d: get('day'), hh: get('hour') % 24, mi: get('minute') };
+    }
+
+    function computeSunTimes() {
+      const now = new Date();
+      const L = londonDateParts(now);
+      // London's current UTC offset in minutes (0 in winter, 60 in BST)
+      let offset = (L.hh * 60 + L.mi) - (now.getUTCHours() * 60 + now.getUTCMinutes());
+      if (offset > 720) offset -= 1440;
+      if (offset < -720) offset += 1440;
+
+      const start = Date.UTC(L.y, 0, 0);
+      const N = Math.round((Date.UTC(L.y, L.mo - 1, L.d) - start) / 86400000);
+      const rad = Math.PI / 180;
+      const g = (2 * Math.PI / 365) * (N - 1);
+      const eqtime = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g)
+        - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+      const decl = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g)
+        - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g)
+        - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
+      const latR = SUN_LAT * rad;
+      let cosHA = Math.cos(90.833 * rad) / (Math.cos(latR) * Math.cos(decl)) - Math.tan(latR) * Math.tan(decl);
+      cosHA = Math.max(-1, Math.min(1, cosHA));
+      const ha = Math.acos(cosHA) / rad;
+
+      let rise = 720 - 4 * (SUN_LON + ha) - eqtime + offset;
+      let set  = 720 - 4 * (SUN_LON - ha) - eqtime + offset;
+      return { rise, set };
+    }
+
+    // Maps real London minutes-of-day onto the reference day the scene was drawn for.
+    // Daytime [sunrise, sunset] -> [390, 1140]; night [sunset, next sunrise] -> [1140, 1830].
+    // Continuous across midnight, so the moon and sky never jump.
+    function warpMinutes(real, st) {
+      const R = st.rise, S = st.set;
+      let m = real;
+      if (m < R) m += 1440;
+      let w;
+      if (m <= S) w = REF_SUNRISE + (m - R) / (S - R) * (REF_SUNSET - REF_SUNRISE);
+      else        w = REF_SUNSET + (m - S) / (R + 1440 - S) * (REF_SUNRISE + 1440 - REF_SUNSET);
+      return w >= 1440 ? w - 1440 : w;
+    }
+
     function updateScene() {
-      const { hh, minutes } = getLondonMinutes();
+      const { hh, minutes: realMinutes } = getLondonMinutes();
+      const minutes = warpMinutes(realMinutes, computeSunTimes());
 
       const sky = getSkyColors(minutes);
       skyEl.style.setProperty('--c-top', `rgb(${sky.top.join(',')})`);
@@ -4793,8 +4977,8 @@ stroke-width="2"/>
       setTimeout(showAngel, randBetween(FIRST_APPEARANCE_MIN, FIRST_APPEARANCE_MAX));
     })();
 
-    // ---------- figure rotation: only 2 of the 5 sanctuary figures show at once ----------
-    // (wooden figure, Mary, Paul, Peter, John). Which pair appears is picked pseudo-randomly
+    // ---------- figure rotation: only 2 of the 6 sanctuary figures show at once ----------
+    // (wooden figure, Mary, Paul, Peter, John, seated Buddha). Which pair appears is picked pseudo-randomly
     // from the calendar date (Europe/London), so it stays the same all day and
     // changes to a different pair the next day.
     (function figureRotationScheduler(){
@@ -4803,7 +4987,8 @@ stroke-width="2"/>
         document.querySelector('.mary-statue'),
         document.querySelector('.paul-statue'),
         document.querySelector('.peter-statue'),
-        document.querySelector('.john-statue')
+        document.querySelector('.john-statue'),
+        document.querySelector('.buddha-statue')
       ].filter(Boolean);
 
       if (figures.length < 2) return;
