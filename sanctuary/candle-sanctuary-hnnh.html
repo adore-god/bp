@@ -124,6 +124,11 @@
 @property --buddha-hair       { syntax: '<color>';  inherits: true; initial-value: #2a2d3a; }
 @property --buddha-base       { syntax: '<color>';  inherits: true; initial-value: #8c7052; }
 
+/* ---------- statue of Artemis: same pedestal stone and skin tone, same night/day + candle warmth ramp ---------- */
+@property --artemis-robe       { syntax: '<color>';  inherits: true; initial-value: #84a8a0; }
+@property --artemis-robe-fold  { syntax: '<color>';  inherits: true; initial-value: #56766f; }
+@property --artemis-hair       { syntax: '<color>';  inherits: true; initial-value: #704828; }
+
 /* ---------- angel-spirit: wing and halo track the same sky/candle ramp as Mary and the wooden figure ---------- */
 @property --angel-wing-top   { syntax: '<color>';  inherits: true; initial-value: #faf8f2; }
 @property --angel-wing-bot   { syntax: '<color>';  inherits: true; initial-value: #d8d0c0; }
@@ -165,6 +170,7 @@
     --peter-robe 14s linear, --peter-robe-fold 14s linear, --peter-mantle 14s linear, --peter-hair 14s linear,
     --john-robe 14s linear, --john-robe-fold 14s linear, --john-hair 14s linear,
     --buddha-robe 14s linear, --buddha-robe-fold 14s linear, --buddha-hair 14s linear, --buddha-base 14s linear,
+    --artemis-robe 14s linear, --artemis-robe-fold 14s linear, --artemis-hair 14s linear,
     --angel-wing-top 14s linear, --angel-wing-bot 14s linear, --angel-halo 14s linear,
     --angel-halo-soft 14s linear, --angel-glow 14s linear;
   font-family: 'Inter', sans-serif;
@@ -2130,6 +2136,51 @@ body.is-night .buddha-statue {
 .buddha-halo { opacity: var(--mary-halo-opacity); }
 .buddha-halo-stop-in { stop-color: rgba(255, 214, 150, 0.6); }
 .buddha-halo-stop-out { stop-color: rgba(255, 214, 150, 0); }
+
+/* ---------- Statue of Artemis (huntress of the moon) ---------- */
+.artemis-statue {
+  position: absolute;
+  bottom: 48%;
+  left: 50%;
+  z-index: 2;
+  width: 30px;
+  height: 78px;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+}
+
+body.is-night .artemis-statue {
+  animation: figureGlow 4s infinite ease-in-out;
+  animation-delay: -0.8s; /* offsets her flicker from the other figures */
+}
+
+.artemis-base { fill: var(--mary-base); } /* same pedestal stone as the others */
+.artemis-chiton { fill: url(#artemisRobeGradient); }
+.artemis-fold {
+  fill: none;
+  stroke: var(--artemis-robe-fold);
+  stroke-width: 0.5;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+.artemis-belt { fill: var(--artemis-robe-fold); }
+.artemis-boot { fill: var(--artemis-robe-fold); }
+.artemis-skin { fill: var(--mary-skin); }
+.artemis-limb { fill: none; stroke: var(--mary-skin); stroke-width: 2; stroke-linecap: round; }
+.artemis-hair { fill: var(--artemis-hair); }
+.artemis-robe-stop-top { stop-color: var(--artemis-robe); }
+.artemis-robe-stop-bot { stop-color: var(--artemis-robe-fold); }
+.artemis-halo { opacity: var(--mary-halo-opacity); }
+.artemis-halo-stop-in { stop-color: rgba(205, 222, 255, 0.6); }  /* moonlit silver rather than candle gold */
+.artemis-halo-stop-out { stop-color: rgba(205, 222, 255, 0); }
+.artemis-bow { fill: none; stroke: #6a4228; stroke-width: 1.1; stroke-linecap: round; }
+.artemis-bowstring { stroke: #e6dcc0; stroke-width: 0.3; opacity: 0.85; }
+.artemis-strap { stroke: #4e301c; stroke-width: 1.1; stroke-linecap: round; }
+.artemis-quiver { fill: #6a4228; }
+.artemis-arrow { stroke: #d9c58a; stroke-width: 0.5; stroke-linecap: round; }
+.artemis-fletch { fill: #e8e2d2; }
+.artemis-moon { fill: #dde3ee; filter: drop-shadow(0 0 1.5px rgba(210, 225, 255, 0.9)); }
+
 
 /* ---------------- NIGHT MOTH (circles the candle flame) ---------------- */
 
@@ -4193,6 +4244,77 @@ stroke-width="2"/>
   </svg>
 </div>
 
+  <!-- Statue of Artemis (standing huntress: crescent-moon diadem, bow, quiver) -->
+<div class="artemis-statue" aria-hidden="true">
+  <svg viewBox="0 0 30 80" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="artemisHaloGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" class="artemis-halo-stop-in" />
+        <stop offset="100%" class="artemis-halo-stop-out" />
+      </radialGradient>
+      <linearGradient id="artemisRobeGradient" x1="30%" y1="0%" x2="60%" y2="100%">
+        <stop offset="0" class="artemis-robe-stop-top"/>
+        <stop offset="1" class="artemis-robe-stop-bot"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Soft moonlit halo behind the head -->
+    <circle class="artemis-halo" cx="15" cy="13" r="9.5" fill="url(#artemisHaloGlow)" />
+
+    <!-- Pedestal -->
+    <ellipse cx="15" cy="76" rx="8" ry="3" class="artemis-base" />
+
+    <!-- Quiver and arrows, rising behind the right shoulder -->
+    <rect class="artemis-quiver" x="19.8" y="16.5" width="3" height="11" rx="1.2" transform="rotate(14 21.3 22)" />
+    <line class="artemis-arrow" x1="20.8" y1="17.2" x2="19.8" y2="11.8" />
+    <line class="artemis-arrow" x1="21.8" y1="17" x2="22" y2="10.8" />
+    <line class="artemis-arrow" x1="22.8" y1="17.4" x2="24" y2="12.2" />
+    <circle class="artemis-fletch" cx="19.7" cy="11.4" r="0.6" />
+    <circle class="artemis-fletch" cx="22" cy="10.4" r="0.6" />
+    <circle class="artemis-fletch" cx="24.1" cy="11.8" r="0.6" />
+
+    <!-- Legs and laced hunting boots -->
+    <path class="artemis-skin" d="M 11.4,53 L 10.8,73.5 L 13.4,73.5 L 14.2,53 Z" />
+    <path class="artemis-skin" d="M 15.8,53 L 16.6,73.5 L 19.2,73.5 L 18.6,53 Z" />
+    <path class="artemis-boot" d="M 10.9,63 L 10.7,74.6 L 13.6,74.6 L 14,63 Z" />
+    <path class="artemis-boot" d="M 16,63 L 16.5,74.6 L 19.4,74.6 L 18.8,63 Z" />
+
+    <!-- Short hunting chiton -->
+    <path class="artemis-chiton" d="M 15,22.5 C 12,22.5 10.6,25 10,29 C 9.6,32 9.4,35 9.6,38 C 8.6,43 7.4,48 6,54 L 24,54 C 22.6,48 21.4,43 20.4,38 C 20.6,35 20.4,32 20,29 C 19.4,25 18,22.5 15,22.5 Z" />
+    <path class="artemis-fold" d="M 12,40 C 11.4,45 10.6,49 10,54 M 15,40 L 15,54 M 18,40 C 18.6,45 19.4,49 20,54 M 6.6,52 C 12,53.4 18,53.4 23.4,52" />
+    <path class="artemis-belt" d="M 9.5,36.2 L 20.5,36.2 L 20.4,38.4 L 9.6,38.4 Z" />
+
+    <!-- Quiver strap across the chest -->
+    <line class="artemis-strap" x1="19.4" y1="24" x2="11" y2="37" />
+
+    <!-- Right arm, relaxed at her side -->
+    <path class="artemis-limb" d="M 19.4,25 C 22,31 23,37 22.4,42.5" />
+    <ellipse class="artemis-skin" cx="22.3" cy="43.4" rx="1.2" ry="1.5" />
+
+    <!-- Bow, held upright at her left -->
+    <path class="artemis-bow" d="M 9,25 C 2.6,34 2.6,52 9,61" />
+    <line class="artemis-bowstring" x1="9" y1="25" x2="9" y2="61" />
+
+    <!-- Left arm gripping the bow -->
+    <path class="artemis-limb" d="M 10.6,25 C 8,31 5.6,37 4.6,42.4" />
+    <ellipse class="artemis-skin" cx="4.4" cy="43.4" rx="1.3" ry="1.7" />
+
+    <!-- Neck -->
+    <rect class="artemis-skin" x="13.6" y="19.4" width="2.8" height="4" />
+
+    <!-- Hair, swept up with short locks at the sides -->
+    <path class="artemis-hair" d="M 10.4,12 C 9.4,15 9.6,19 11,21.5 C 11.6,19 11.4,16 11.6,13.6 Z" />
+    <path class="artemis-hair" d="M 19.6,12 C 20.6,15 20.4,19 19,21.5 C 18.4,19 18.6,16 18.4,13.6 Z" />
+    <path class="artemis-hair" d="M 10.6,13.8 C 10,9.6 12,7 15,7 C 18,7 20,9.6 19.4,13.8 C 18.4,11.4 16.8,10.2 15,10.2 C 13.2,10.2 11.6,11.4 10.6,13.8 Z" />
+
+    <!-- Face -->
+    <ellipse cx="15" cy="15.8" rx="3.8" ry="4.6" class="artemis-skin" />
+
+    <!-- Crescent-moon diadem -->
+    <path class="artemis-moon" d="M 11.4,4.2 A 3.9 3.9 0 0 0 18.6,4.2 A 7 7 0 0 1 11.4,4.2 Z" />
+  </svg>
+</div>
+
   <!-- Small Tea Lights (foreground, flanking the main candle) -->
   <div class="tea-light tea-light-one">
     <div class="tea-light-glow"></div>
@@ -4627,6 +4749,11 @@ stroke-width="2"/>
     const BUDDHA_ROBE_FOLD_NIGHT = [48,26,8],   BUDDHA_ROBE_FOLD_DAY = [150,82,26];
     const BUDDHA_HAIR_NIGHT      = [14,15,22],  BUDDHA_HAIR_DAY      = [52,56,74];
 
+    // Artemis: moon-silver sage chiton, chestnut hair, same pedestal stone as Mary.
+    const ARTEMIS_ROBE_NIGHT      = [30,44,48],  ARTEMIS_ROBE_DAY      = [132,168,160];
+    const ARTEMIS_ROBE_FOLD_NIGHT = [19,29,32],  ARTEMIS_ROBE_FOLD_DAY = [86,118,114];
+    const ARTEMIS_HAIR_NIGHT      = [36,24,14],  ARTEMIS_HAIR_DAY      = [112,72,40];
+
     // Angel wing/halo: same night/day-anchor + candle-warmth approach as
     // Mary and the wooden figure. Wings read as cool moonlit white-grey at
     // night, warm toward candlelight as the flame becomes the dominant
@@ -4794,6 +4921,9 @@ stroke-width="2"/>
       const buddhaRobe     = lerpColor(lerpColor(lerpColor(BUDDHA_ROBE_NIGHT, BUDDHA_ROBE_DAY, intensity), GOLDEN_LIGHT, maryGold * 0.30), CANDLE_WARM, candleFactor * 0.55);
       const buddhaRobeFold = lerpColor(lerpColor(BUDDHA_ROBE_FOLD_NIGHT, BUDDHA_ROBE_FOLD_DAY, intensity), CANDLE_WARM, candleFactor * 0.50);
       const buddhaHair     = lerpColor(lerpColor(BUDDHA_HAIR_NIGHT, BUDDHA_HAIR_DAY, intensity), CANDLE_WARM, candleFactor * 0.30);
+      const artemisRobe     = lerpColor(lerpColor(lerpColor(ARTEMIS_ROBE_NIGHT, ARTEMIS_ROBE_DAY, intensity), GOLDEN_LIGHT, maryGold * 0.25), CANDLE_WARM, candleFactor * 0.50);
+      const artemisRobeFold = lerpColor(lerpColor(ARTEMIS_ROBE_FOLD_NIGHT, ARTEMIS_ROBE_FOLD_DAY, intensity), CANDLE_WARM, candleFactor * 0.45);
+      const artemisHair     = lerpColor(lerpColor(ARTEMIS_HAIR_NIGHT, ARTEMIS_HAIR_DAY, intensity), CANDLE_WARM, candleFactor * 0.30);
 
       // Angel: wing catches the same golden-hour kiss as Mary's skin/robe,
       // then warms toward candlelight at night; halo ember brightens with
@@ -4873,6 +5003,9 @@ stroke-width="2"/>
       body.setProperty('--buddha-robe-fold', `rgb(${buddhaRobeFold.join(',')})`);
       body.setProperty('--buddha-hair', `rgb(${buddhaHair.join(',')})`);
       body.setProperty('--buddha-base', `rgb(${maryBase.join(',')})`);
+      body.setProperty('--artemis-robe', `rgb(${artemisRobe.join(',')})`);
+      body.setProperty('--artemis-robe-fold', `rgb(${artemisRobeFold.join(',')})`);
+      body.setProperty('--artemis-hair', `rgb(${artemisHair.join(',')})`);
 
       body.setProperty('--angel-wing-top', `rgb(${angelWingTop.join(',')})`);
       body.setProperty('--angel-wing-bot', `rgb(${angelWingBot.join(',')})`);
@@ -5306,8 +5439,8 @@ stroke-width="2"/>
       setTimeout(showAngel, randBetween(FIRST_APPEARANCE_MIN, FIRST_APPEARANCE_MAX));
     })();
 
-    // ---------- figure rotation: only 2 of the 6 sanctuary figures show at once ----------
-    // (wooden figure, Mary, Paul, Peter, John, seated Buddha). Which pair appears is picked pseudo-randomly
+    // ---------- figure rotation: only 2 of the 7 sanctuary figures show at once ----------
+    // (wooden figure, Mary, Paul, Peter, John, seated Buddha, Artemis). Which pair appears is picked pseudo-randomly
     // from the calendar date (in the visitor's own time zone), so it stays the same all day and
     // changes to a different pair the next day.
     (function figureRotationScheduler(){
@@ -5317,7 +5450,8 @@ stroke-width="2"/>
         document.querySelector('.paul-statue'),
         document.querySelector('.peter-statue'),
         document.querySelector('.john-statue'),
-        document.querySelector('.buddha-statue')
+        document.querySelector('.buddha-statue'),
+        document.querySelector('.artemis-statue')
       ].filter(Boolean);
 
       if (figures.length < 2) return;
