@@ -4897,7 +4897,7 @@ stroke-width="2"/>
     // starts to lighten 90 minutes before sunrise and is dark again 80 minutes
     // after sunset (matching the colour keyframes).
     const REF_SUNRISE = 360, REF_SUNSET = 1150;
-    const TWI_BEFORE = 90, TWI_AFTER = 80;
+    const REF_TWI_BEFORE = 90, REF_TWI_AFTER = 80;
 
     function londonDateParts(now) {
       const p = new Intl.DateTimeFormat('en-GB', {
@@ -4930,31 +4930,47 @@ stroke-width="2"/>
       cosHA = Math.max(-1, Math.min(1, cosHA));
       const ha = Math.acos(cosHA) / rad;
 
-      let rise = 720 - 4 * (SUN_LON + ha) - eqtime + offset;
-      let set  = 720 - 4 * (SUN_LON - ha) - eqtime + offset;
-      return { rise, set };
+      const rise = 720 - 4 * (SUN_LON + ha) - eqtime + offset;
+      const set  = 720 - 4 * (SUN_LON - ha) - eqtime + offset;
+
+      // Twilight: how long the sky glows before sunrise and after sunset, measured
+      // as the time the sun takes to climb from 10 degrees below the horizon to the
+      // horizon. Short and quick in winter, long and lingering in summer. Far enough
+      // north the sun never gets that low in midsummer, so we cap it.
+      const twilightMinutes = () => {
+        const sinH = Math.sin(-10 * rad);
+        const c = (sinH - Math.sin(latR) * Math.sin(decl)) / (Math.cos(latR) * Math.cos(decl));
+        if (c < -1 || c > 1) return 180;
+        const haT = Math.acos(c) / rad;
+        return (haT - ha) * 4;
+      };
+      let twi = Math.max(35, Math.min(180, twilightMinutes()));
+      // always leave some true night between dusk and the next dawn
+      const nightLen = 1440 - (set - rise);
+      twi = Math.min(twi, Math.max(20, (nightLen - 40) / 2));
+      return { rise, set, twiBefore: twi, twiAfter: twi };
     }
 
     // Maps real London minutes-of-day onto the reference day the scene was drawn for.
-    //  - the 90 minutes before sunrise and 80 after sunset run 1:1 in real time,
-    //    so dawn and dusk last as long as they really do;
+    //  - the real twilight before sunrise and after sunset (short in winter, long
+    //    in summer) is mapped onto the scene's dawn and dusk;
     //  - daylight is stretched or squeezed to fit between the reference sunrise and sunset;
     //  - the dark middle of the night takes up whatever is left.
     // Continuous across midnight, so the moon and sky never jump.
     function warpMinutes(real, st) {
-      const R = st.rise, S = st.set;
+      const R = st.rise, S = st.set, T1 = st.twiBefore, T2 = st.twiAfter;
       let m = real;
-      if (m < R - TWI_BEFORE) m += 1440;
+      if (m < R - T1) m += 1440;
       let w;
       if (m < R) {
-        w = REF_SUNRISE - (R - m);
+        w = REF_SUNRISE - (R - m) / T1 * REF_TWI_BEFORE;
       } else if (m <= S) {
         w = REF_SUNRISE + (m - R) / (S - R) * (REF_SUNSET - REF_SUNRISE);
-      } else if (m <= S + TWI_AFTER) {
-        w = REF_SUNSET + (m - S);
+      } else if (m <= S + T2) {
+        w = REF_SUNSET + (m - S) / T2 * REF_TWI_AFTER;
       } else {
-        const a = S + TWI_AFTER, b = R - TWI_BEFORE + 1440;
-        const ra = REF_SUNSET + TWI_AFTER, rb = REF_SUNRISE - TWI_BEFORE + 1440;
+        const a = S + T2, b = R - T1 + 1440;
+        const ra = REF_SUNSET + REF_TWI_AFTER, rb = REF_SUNRISE - REF_TWI_BEFORE + 1440;
         w = ra + (m - a) / (b - a) * (rb - ra);
       }
       return w >= 1440 ? w - 1440 : w;
