@@ -713,6 +713,20 @@ body.is-night .candlelight-ambient::before {
     opacity: 0.2;
     text-align: center;
   }
+  .site-credit {
+    position: relative;
+    z-index: 3;
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: #fff;
+    opacity: 0.2;
+    text-align: center;
+    text-decoration: none;
+    transition: opacity 0.3s ease;
+  }
+  .site-credit:hover, .site-credit:focus-visible { opacity: 0.55; }
 
   /* ---------- Closeable Floating Drawer (Dictionary) ---------- */
   .dictionary-drawer {
@@ -3777,6 +3791,7 @@ stroke-width="2"/>
 
     <div class="hour-label" id="hourLabel">Vespers</div>
     <div class="hour-gloss" id="hourGloss">Evening Prayer</div>
+    <a class="site-credit" href="https://thebibleplot.com/" target="_blank" rel="noopener">thebibleplot.com</a>
 
     <div class="altar-candles">
   <!-- Left Dark Wood Candle -->
@@ -4794,14 +4809,20 @@ stroke-width="2"/>
       updateAmbienceTrack(phase);
     }
 
-    function canonicalHour(hh) {
-      if (hh < 3)  return { name: 'Matins',   gloss: 'The Night Watch' };
-      if (hh < 6)  return { name: 'Lauds',    gloss: 'Praise at Daybreak' };
-      if (hh < 9)  return { name: 'Prime',    gloss: 'The First Hour' };
-      if (hh < 12) return { name: 'Terce',    gloss: 'Mid-Morning Prayer' };
-      if (hh < 14) return { name: 'Sext',     gloss: 'Midday Prayer' };
-      if (hh < 17) return { name: 'None',     gloss: 'Mid-Afternoon Prayer' };
-      if (hh < 20) return { name: 'Vespers',  gloss: 'Evening Prayer' };
+    // The hours of prayer follow the sun, not the clock: Lauds at first light,
+    // Prime at sunrise, Sext around solar noon, Vespers as the light fades and
+    // Compline after dark. The boundaries are fractions of the real daylight
+    // length, so they move with the seasons and with the clocks changing.
+    function canonicalHour(real, st) {
+      const R = st.rise, S = st.set, day = S - R;
+      const at = f => R + f * day;
+      if (real < R - 75)       return { name: 'Matins',   gloss: 'The Night Watch' };
+      if (real < R)            return { name: 'Lauds',    gloss: 'Praise at Daybreak' };
+      if (real < at(0.20))     return { name: 'Prime',    gloss: 'The First Hour' };
+      if (real < at(0.42))     return { name: 'Terce',    gloss: 'Mid-Morning Prayer' };
+      if (real < at(0.58))     return { name: 'Sext',     gloss: 'Midday Prayer' };
+      if (real < at(0.88))     return { name: 'None',     gloss: 'Mid-Afternoon Prayer' };
+      if (real < S + 45)       return { name: 'Vespers',  gloss: 'Evening Prayer' };
       return { name: 'Compline', gloss: 'Night Prayer' };
     }
 
@@ -4882,7 +4903,8 @@ stroke-width="2"/>
 
     function updateScene() {
       const { hh, minutes: realMinutes } = getLondonMinutes();
-      const minutes = warpMinutes(realMinutes, computeSunTimes());
+      const sunTimes = computeSunTimes();
+      const minutes = warpMinutes(realMinutes, sunTimes);
 
       const sky = getSkyColors(minutes);
       skyEl.style.setProperty('--c-top', `rgb(${sky.top.join(',')})`);
@@ -4912,7 +4934,7 @@ stroke-width="2"/>
       moonEl.style.left = mPos.x + '%';
       moonEl.style.top = mPos.y + '%';
 
-      const hour = canonicalHour(hh);
+      const hour = canonicalHour(realMinutes, sunTimes);
       hourLabelEl.textContent = hour.name;
       hourGlossEl.textContent = hour.gloss;
 
